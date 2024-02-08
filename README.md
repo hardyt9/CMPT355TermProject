@@ -18,7 +18,7 @@ Konane is a two-player game played on a rectangular grid. The objective of the g
     Python
     pip
 
-3. Run program 
+3. Run program: 
     run make to create executable named konane
     ./konane to create instance of game play
     
