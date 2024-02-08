@@ -22,4 +22,4 @@ Konane is a two-player game played on a rectangular grid. The objective of the g
     run make to create executable named konane
     ./konane to create instance of game play
     
-This project is a group effot based off of elments learned in our CMPT 355 - AI course, should be fun!
+This project is a group effort based off of elements learned in our CMPT 355 - AI course!
