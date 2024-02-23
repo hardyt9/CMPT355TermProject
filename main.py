@@ -29,3 +29,10 @@ class KonaneBoard:
                 row.append(color2)
         return row
 
+def main(arg1, arg2):
+    agent = KonaneAI()
+    board = KonaneBoard()
+    return
+
+if __name__ == "__main__":
+    main()
