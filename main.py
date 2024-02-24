@@ -3,13 +3,45 @@ import sys
 
 # Implements the minimax algorithm
 class KonaneAI:
-    def __init__(self):
-        pass
+    def __init__(self, state=[]):
+        self.__curr_board_state = state
+        self.__action = []
+    
+    def first_move_W(self, board_file):
+        fh = open(board_file, "r")
+        line = fh.readline()
+        row = 0
+        while line != "":
+            if 'O' in line:
+                break
+            row += 1
+            line = fh.readline()
+        
+        if row == 0:
+            return ""
+            
+
+    def first_move_B(self, board_file):
+        
+        return
+    
+    def successors(state):
+
+        return
+
+class Node:
+   def __init__(self, parent, board, colour):
+      self.__parent = parent
+      self.__board = board
+      self.__colour = colour
+      self.__action = ""
+      self.__successors = []
 
 # Implements the playing board - 8x8, alternating black and white tiles
 class KonaneBoard:
     def __init__(self, board=[]):
         self.board = []
+        self.x = "ABCDEFGH"
         if board == []: 
             self.create_board()
         else: 
@@ -21,8 +53,6 @@ class KonaneBoard:
                 self.board.append(self.create_row('B','W'))
             else:
                 self.board.append(self.create_row('W','B'))
-        for row in self.board:
-            print(row)
 
     def create_row(self, color1, color2):
         row = []
@@ -33,47 +63,67 @@ class KonaneBoard:
                 row.append(color2)
         return row
     
-    def update(self, action, colour):
-        column = {'A':0, 'B':1, 'C':2, 'D':3, 'E':4, 'F':5, 'G':6, 'H':7} 
-        tile_row_1 = int(action[1]) - 1
-        tile_col_1 = column[action[0]]
-        if len(action) == 2: # remove piece
-            self.board[tile_row_1][tile_col_1] = 'O'
+    def update_by_move(self, move):
+        # Convert tile piece to match list of list format
+        prev_x = self.convert_letter(move[0])
+        prev_y = self.convert_number(move[1])
+        # color of moving piece
+        colour = self.board[prev_y][prev_x]
+        if len(move) == 2: # remove piece
+            self.board[prev_y][prev_x] = 'O'
             return
-        
-        tile_row_2 = int(action[4]) - 1
-        tile_col_2 = column[action[3]]
-        if  tile_col_1 == tile_col_2: # vertical/column jump
-            for i in range(int(tile_row_1), tile_row_2):
-                self.board[i][tile_col_1] = 'O'
-            self.board[int(tile_row_2)][tile_col_2] = colour
-        else: # horizontal/row jump
-            for j in range(tile_col_1, tile_col_2):
-                self.board[j][tile_col_1] = 'O'
-            self.board[tile_row_2][tile_col_2] = colour
+        # Convert second tile piece to match list of list format
+        new_x = self.convert_letter(move[3])
+        new_y = self.convert_number(move[4])
+        step = 1
 
+        if  prev_x == new_x: # vertical/column jump
+            if new_y < prev_y: step = -1
+            for i in range(prev_y, new_y, step): # can handle multiple jumps
+                self.board[i][prev_x] = 'O'
+            self.board[int(new_y)][new_x] = colour
+        else: # horizontal/row jump
+            print('wru')
+            if new_x < prev_x: step = -1
+            for j in range(prev_x, new_x, step): # can handle multiple jumps
+                print('ddd')
+                self.board[prev_y][j] = 'O'
+            self.board[new_y][new_x] = colour
     
+    
+    # letter - x, number - y Ex. E5 -> 'E', '5'
+    def convert_letter(self, letter):
+        return self.x.find(letter)
+    
+    def convert_number(self, number):
+        return 8 - int(number)
+
     # to see if the board is correct
     def print(self):
         for i in self.board:
             print(i)
 
-        #    for j in range(len(self.board[0])):
-        #        print(self.board[i][j], end="")
-            #print('\n')
-
-
+    
 def main():
     argv = sys.argv
     board = KonaneBoard()
     agent = KonaneAI()
-    print('\n')
     board.print()
-    board.update('E5', 'B')
-    board.update('G5', 'W')
     print('\n')
+    board.update_by_move('E5')
+    board.update_by_move('G3-E3')
+    board.update_by_move('G6-E6')
+    board.update_by_move('A1-A6')
+
+
     board.print()
-        
+    #board.convert_file_to_board("test_file.txt")
+
+    #if argv[2] == 'W':
+    #    print()
+    #else:
+    #    print()
+
     return
 
 if __name__ == "__main__":
