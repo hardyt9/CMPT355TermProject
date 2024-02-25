@@ -11,7 +11,6 @@ class Node:
       self.board = board
       self.colours_turn = colours_turn
       self.action = action
-      self.value = None
       self.successors = []
 
     def get_successors(self, state):
@@ -64,29 +63,33 @@ class KonaneAI:
     # implementing and modifying the given code for alpha beta pruning from the Adversarial search slides
     # work in progress
     def alpha_beta_search(self):
-        v = self.max_value(self.state, -100, 100)
+        depth = 0
+        v = self.max_value(depth, -100, 100)
         action = self.state.get_successors.find(v)
         return action 
 
     # work in progress
-    def max_value(self, alpha , beta):
-        if self.cutoff_test(): return self.evaluation()
+    def max_value(self, depth, alpha , beta):
+        if self.cutoff_test(depth): 
+            return self.evaluation()
         v = -100
         for s in self.state.get_successors:
-            v = max(v, s.min_value(alpha, beta))
+            v = max(v, s.min_value(depth + 1, alpha, beta))
             if v >= beta: return v
             alpha = max(alpha, v)
         return v
 
     # work in progress
-    def min_value(self, alpha, beta):
-        if self.cutoff_test(): return self.evaluation()
+    def min_value(self ,depth, alpha, beta):
+        if self.cutoff_test(depth): 
+            return self.evaluation()
         v = 100
         for s in self.state.get_successors:
-            v = min(v, s.max_value(alpha, beta))
+            v = min(v, s.max_value(depth + 1, alpha, beta))
             if v <= alpha: return v
             beta = min(beta, v)
             return v
+
     
     # finds possible moves in current state 
     # to-do - replace with recursive fxn to clean up
@@ -161,12 +164,13 @@ class KonaneAI:
         return moves
     
     # work in progress
-    def cutoff_test(self):
-        return
-
-    # work in progress
-    def successors(self):
-        return
+    def cutoff_test(self, depth):
+        # reach maximum dapth for search
+        if depth == self.max_depth: 
+            return True
+        
+        # Todo - reach a terminal node 
+        return False
 
     # work in progress
     def evaluation(self):
