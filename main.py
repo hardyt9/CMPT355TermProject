@@ -1,6 +1,8 @@
 import sys
 import time
 import copy
+import random
+
 THINKING_TIME = 10
 # This file will contains all the implementation of the minimax algorithm and alpha-beta pruning. (subject to change)
 
@@ -16,7 +18,7 @@ class Node:
     def get_successors(self, state):
         return self.successors
     
-    # preprocess the first mvoes of the game for white and black
+    # preprocess the first moves of the game for white and black
     def preprocess_first_moves(self):
         # 4 possible moves for Black - remove piece at A8, D5, E4 or H1
         self.insert_successor("A8", "W")
@@ -30,7 +32,7 @@ class Node:
             move = self.successors[i]
             for j in white_moves[i]: # inserts possible white moves 
                 move.insert_successor(j, "B")
-    
+                
     # to do - handle adding multiple successors
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successor(self, move, colour):
@@ -54,10 +56,13 @@ class KonaneAI:
                 action = "D5"
             else:
                 action = "D4"
-        else:
-            action = input("Action:")
 
+        else:
+            #action = input()
+            action = random.sample(self.possible_moves(board), 1)[0]
         self.total_moves += 1
+
+        print(f'Move chosen: {action}')
 
         return action #self.__actions.pop()
     
@@ -162,6 +167,7 @@ class KonaneAI:
                                 pass
         if moves == []:
             moves.append('quit')
+        print(f'Possible moves: {moves}')
         return moves
     
     # work in progress
@@ -256,15 +262,13 @@ class KonaneBoard:
         action = ''
         while action != 'quit':
             self.print_board()
-
             if count % 2 == 0:
                 player = player_1
             else:
                 player = player_2
-            print("Possible moves:", player.possible_moves(self))
             action = player.action(self)
             if action != 'quit':
-                self.update_by_move(player.action(self))
+                self.update_by_move(action)
             count += 1
 
     def generate_valid_moves(self, colour_turn):
