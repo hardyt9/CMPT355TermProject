@@ -13,7 +13,6 @@ class Node:
       self.board = board
       self.colours_turn = colours_turn
       self.action = action
-      self.value = None
       self.successors = []
 
     def get_successors(self, state):
@@ -33,7 +32,8 @@ class Node:
             move = self.successors[i]
             for j in white_moves[i]: # inserts possible white moves 
                 move.insert_successor(j, "B")
-
+                
+    # to do - handle adding multiple successors
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successor(self, move, colour):
         successor = KonaneBoard(self.board.get_board())
@@ -69,29 +69,33 @@ class KonaneAI:
     # implementing and modifying the given code for alpha beta pruning from the Adversarial search slides
     # work in progress
     def alpha_beta_search(self):
-        v = self.max_value(self.state, -100, 100)
+        depth = 0
+        v = self.max_value(depth, -100, 100)
         action = self.state.get_successors.find(v)
         return action 
 
     # work in progress
-    def max_value(self, alpha , beta):
-        if self.cutoff_test(): return self.evaluation()
+    def max_value(self, depth, alpha , beta):
+        if self.cutoff_test(depth): 
+            return self.evaluation()
         v = -100
         for s in self.state.get_successors:
-            v = max(v, s.min_value(alpha, beta))
+            v = max(v, s.min_value(depth + 1, alpha, beta))
             if v >= beta: return v
             alpha = max(alpha, v)
         return v
 
     # work in progress
-    def min_value(self, alpha, beta):
-        if self.cutoff_test(): return self.evaluation()
+    def min_value(self ,depth, alpha, beta):
+        if self.cutoff_test(depth): 
+            return self.evaluation()
         v = 100
         for s in self.state.get_successors:
-            v = min(v, s.max_value(alpha, beta))
+            v = min(v, s.max_value(depth + 1, alpha, beta))
             if v <= alpha: return v
             beta = min(beta, v)
             return v
+
     
     # finds possible moves in current state 
     # to-do - replace with recursive fxn to clean up
@@ -167,12 +171,13 @@ class KonaneAI:
         return moves
     
     # work in progress
-    def cutoff_test(self):
-        return
-
-    # work in progress
-    def successors(self):
-        return
+    def cutoff_test(self, depth):
+        # reach maximum dapth for search
+        if depth == self.max_depth: 
+            return True
+        
+        # Todo - reach a terminal node 
+        return False
 
     # work in progress
     def evaluation(self):
@@ -266,6 +271,70 @@ class KonaneBoard:
                 self.update_by_move(action)
             count += 1
 
+    def generate_valid_moves(self, colour_turn):
+        if colour_turn == "B":
+            colour_opp = "W"
+        else: 
+            colour_opp = "B"
+        
+        moves = []
+        for y in range(8):
+            for x in range(8):
+                # found piece to move
+                if self.board[y][x] == colour_turn:
+                    initial = self.convert_to_tile(x, y)
+                    #moving left
+                    for k in range(x - 1, -1, -2):
+                        # out of bounds
+                        if k < 0 or (k - 1) < 0:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if self.board[y][k] != colour_opp or self.board[y][k - 1] != 'O': 
+                            break
+                        final = self.convert_to_tile(k-1, y)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving up
+                    for j in range(y-1, -1, -2):
+                        # out of bounds
+                        if j < 0 or (j - 1) < 0:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if self.board[j][x] != colour_opp or self.board[j-1][x] != 'O': 
+                            break
+                        final = self.convert_to_tile(x, j - 1)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving right
+                    for k in range(x+1, 8, 2):
+                        # out of bounds
+                        if k > 7 or (k + 1) > 7:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if self.board[y][k] != colour_opp or self.board[y][k + 1] != 'O': 
+                            break
+                        final = self.convert_to_tile(k + 1, y)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving down
+                    for l in range(y+1, 8, 2):
+                        # out of bounds
+                        if l > 7 or (l + 1) > 7:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if self.board[l][x] != colour_opp or self.board[l + 1][x] != 'O': 
+                            break
+                        final = self.convert_to_tile(x, l + 1)
+                        moves.append(f"{initial}-{final}") 
+        return moves
+    
+    
+    def convert_to_tile(self, x, y):
+        letter = self.x[x]
+        number = str(8 - y)
+        return letter + number
+    
+
 def main():
     '''
     argv = sys.argv
@@ -280,7 +349,16 @@ def main():
 
     return
     '''
-    KonaneBoard().play_game()
+    board = KonaneBoard()
+    board.print_board()
+    board.update_by_move("F5")
+    board.update_by_move("D5")
+
+    board.print_board()
+
+    moves = board.generate_valid_moves('B')
+    print(moves)
+    #KonaneBoard().play_game()
 
 if __name__ == "__main__":
     main()
