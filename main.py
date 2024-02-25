@@ -100,7 +100,7 @@ class KonaneAI:
         if self.cutoff_test(depth, state): 
             return self.evaluation(state)
         v = -100
-        for s in self.successors(state):
+        for s in state.get_successors():
             v = max(v, s.min_value(depth + 1, s, alpha, beta))
             if v >= beta: return v
             alpha = max(alpha, v)
@@ -111,7 +111,7 @@ class KonaneAI:
         if self.cutoff_test(depth, state): 
             return self.evaluation(state)
         v = 100
-        for s in self.successors(state):
+        for s in state.get_successors():
             v = min(v, s.max_value(depth + 1, s, alpha, beta))
             if v <= alpha: return v
             beta = min(beta, v)
@@ -123,24 +123,25 @@ class KonaneAI:
         if depth == self.max_depth: 
             return True
         
-        # Todo - reach a terminal node 
+        if len(state.get_successors()) == 0:
+            if state.board == KonaneBoard():
+                self.first_move_B(state)
+            
+            elif state.action in ["A8", "D5", "E4", "H1"]:
+                self.first_move_W(state)
+            
+            else:
+                moves = self.generate_valid_moves(state)
+                self.insert_successors(moves, state)
+        
+        # terminal node
+        if len(state.get_successors(0)) == 0:
+            return True
+        
         return False
 
     # work in progress
     def evaluation(self, state):
-        return
-    
-    # • Successor function: list of (move,state) pairs specifying legal moves
-    def successors(self, state):
-        if state.board == KonaneBoard():
-            self.first_move_B(state)
-        
-        elif state.action in ["A8", "D5", "E4", "H1"]:
-            self.first_move_W(state)
-        
-        else:
-            moves = self.generate_valid_moves(state)
-            self.insert_successors(moves, state)
         return
 
     # finds possible moves in current state 
