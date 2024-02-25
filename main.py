@@ -35,22 +35,12 @@ class KonaneAI:
     # preprocess the first moves of the game for white and black
     def first_move_B(self, state):
         # 4 possible moves for Black - remove piece at A8, D5, E4 or H1
-        state.insert_successors("A8", state)
-        state.insert_successors("D5", state)
-        state.insert_successors("E4", state)
-        state.insert_successors("H1", state)
-        return
+        self.insert_successors("D5", state)
+        self.insert_successors("E4", state)
 
     def first_move_W(self, state):
-        if state[0][0] == 'O':
-            self.insert_successors(["B8", "A7"], state)
-        elif state[3][3] == 'O':
-            self.insert_successors(["D6", "C5", "E5", "D4"], state)
-        elif state[4][4] == 'O':
-            self.insert_successors(["E5", "D4", "F4", "E3"], state)
-        elif state[7][7] == 'O':
-            self.insert_successors(["H2", "G1"], state)
-        return  
+        self.insert_successors(["E5", "D4"], state)
+
 
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successors(self, moves, state):
@@ -127,7 +117,7 @@ class KonaneAI:
             if state.board == KonaneBoard():
                 self.first_move_B(state)
             
-            elif state.action in ["A8", "D5", "E4", "H1"]:
+            elif state.action in ["D5", "E4"]:
                 self.first_move_W(state)
             
             else:
