@@ -8,50 +8,68 @@ THINKING_TIME = 10
 
 # Implements a node (state) of a game for a tree to search and evaluate using alphabeta
 class Node:
-    def __init__(self, board, colours_turn="B", action ="", parent=None):
-      self.parent = parent
+    def __init__(self, board, colours_turn="B", action =""):
       self.board = board
       self.colours_turn = colours_turn
       self.action = action
       self.successors = []
+      self.value = 0
 
-    def get_successors(self, state):
+    def get_successors(self):
         return self.successors
     
-    # preprocess the first moves of the game for white and black
-    def preprocess_first_moves(self):
-        # 4 possible moves for Black - remove piece at A8, D5, E4 or H1
-        self.insert_successor("A8", "W")
-        self.insert_successor("D5", "W")
-        self.insert_successor("E4", "W")
-        self.insert_successor("H1", "W")
-
-        #possible white moves in a list [[for A8],[for D5],[for E4],[for H1]]
-        white_moves = [["B8", "A7"], ["D6", "C5", "E5", "D4"], ["E5", "D4", "F4", "E3"], ["H2", "G1"]]
-        for i in range(len(white_moves)): # goes through black's first moves
-            move = self.successors[i]
-            for j in white_moves[i]: # inserts possible white moves 
-                move.insert_successor(j, "B")
-                
-    # to do - handle adding multiple successors
-    # insert the next possible state/node after a legal move happens from the current state/node
-    def insert_successor(self, move, colour):
-        successor = KonaneBoard(self.board.get_board())
-        successor.update_by_move(move)
-        self.successors.append(Node(successor, colour, move, self))
-
+    def get_value(self):
+        return self.value    
+    
+    def get_action(self):
+        return self.action
 
 # Implements the minimax algorithm
 class KonaneAI:
     def __init__(self, colour, state = None):
-        self.total_moves = 0
-        self.state = Node(KonaneBoard())
+        self.state = state
         self.best_moves = []
         self.colour = colour
+        self.t_table = [state] # not yet optimised into program
+
+    # preprocess the first moves of the game for white and black
+    def first_move_B(self, state):
+        # 4 possible moves for Black - remove piece at A8, D5, E4 or H1
+        state.insert_successors("A8", state)
+        state.insert_successors("D5", state)
+        state.insert_successors("E4", state)
+        state.insert_successors("H1", state)
+        return
+
+    def first_move_W(self, state):
+        if state[0][0] == 'O':
+            self.insert_successors(["B8", "A7"], state)
+        elif state[3][3] == 'O':
+            self.insert_successors(["D6", "C5", "E5", "D4"], state)
+        elif state[4][4] == 'O':
+            self.insert_successors(["E5", "D4", "F4", "E3"], state)
+        elif state[7][7] == 'O':
+            self.insert_successors(["H2", "G1"], state)
+        return  
+
+    # insert the next possible state/node after a legal move happens from the current state/node
+    def insert_successors(self, moves, state):
+        if state.colours_turn == "B":
+            colour = "W"
+        else: 
+            colour = "B"
+
+        for move in moves:
+            # create a new board with updated move
+            successor = KonaneBoard(state.board.get_board())
+            successor.update_by_move(move)
+
+            state.get_successors().append(Node(successor, colour, move))
 
     #actions -> move piece, remove piece etc.
     def action(self, board):
-        if self.total_moves == 0:
+        if self.state.board == Node(KonaneBoard()):
+            self.preprocess_first_move_B()
             if self.colour == 'B':
                 action = "D5"
             else:
@@ -70,33 +88,62 @@ class KonaneAI:
     # work in progress
     def alpha_beta_search(self):
         depth = 0
-        v = self.max_value(depth, -100, 100)
-        action = self.state.get_successors.find(v)
-        return action 
+        v = self.max_value(depth, self.state,  -100, 100)
+        for s in self.state.get_successors():
+            if s.get_value() == v:
+                return s.get_action()
+
+        return self.state.get_successors()[0]
 
     # work in progress
-    def max_value(self, depth, alpha , beta):
-        if self.cutoff_test(depth): 
-            return self.evaluation()
+    def max_value(self, depth, state, alpha, beta):
+        if self.cutoff_test(depth, state): 
+            return self.evaluation(state)
         v = -100
-        for s in self.state.get_successors:
-            v = max(v, s.min_value(depth + 1, alpha, beta))
+        for s in state.get_successors():
+            v = max(v, s.min_value(depth + 1, s, alpha, beta))
             if v >= beta: return v
             alpha = max(alpha, v)
         return v
 
     # work in progress
-    def min_value(self ,depth, alpha, beta):
-        if self.cutoff_test(depth): 
-            return self.evaluation()
+    def min_value(self, depth, state, alpha, beta):
+        if self.cutoff_test(depth, state): 
+            return self.evaluation(state)
         v = 100
-        for s in self.state.get_successors:
-            v = min(v, s.max_value(depth + 1, alpha, beta))
+        for s in state.get_successors():
+            v = min(v, s.max_value(depth + 1, s, alpha, beta))
             if v <= alpha: return v
             beta = min(beta, v)
             return v
 
-    
+        # work in progress
+    def cutoff_test(self, depth, state):
+        # reach maximum dapth for search
+        if depth == self.max_depth: 
+            return True
+        
+        if len(state.get_successors()) == 0:
+            if state.board == KonaneBoard():
+                self.first_move_B(state)
+            
+            elif state.action in ["A8", "D5", "E4", "H1"]:
+                self.first_move_W(state)
+            
+            else:
+                moves = self.generate_valid_moves(state)
+                self.insert_successors(moves, state)
+        
+        # terminal node
+        if len(state.get_successors(0)) == 0:
+            return True
+        
+        return False
+
+    # work in progress
+    def evaluation(self, state):
+        return
+
     # finds possible moves in current state 
     # to-do - replace with recursive fxn to clean up
     def possible_moves(self, state):
@@ -169,20 +216,70 @@ class KonaneAI:
             moves.append('quit')
         print(f'Possible moves: {moves}')
         return moves
-    
-    # work in progress
-    def cutoff_test(self, depth):
-        # reach maximum dapth for search
-        if depth == self.max_depth: 
-            return True
-        
-        # Todo - reach a terminal node 
-        return False
 
-    # work in progress
-    def evaluation(self):
-        return
+    def generate_valid_moves(self, state):
+
+        if state.colours_turn == "B":
+            colour_opp = "W"
+        else: 
+            colour_opp = "B"
         
+        moves = []
+        for y in range(8):
+            for x in range(8):
+                # found piece to move
+                if state.board.get_board()[y][x] == state.colours_turn:
+                    initial = self.convert_to_tile(x, y)
+                    #moving left
+                    for k in range(x - 1, -1, -2):
+                        # out of bounds
+                        if k < 0 or (k - 1) < 0:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if state.board.get_board()[y][k] != colour_opp or state.board.get_board()[y][k - 1] != 'O': 
+                            break
+                        final = self.convert_to_tile(k-1, y)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving up
+                    for j in range(y-1, -1, -2):
+                        # out of bounds
+                        if j < 0 or (j - 1) < 0:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if state.board.get_board()[j][x] != colour_opp or state.board.get_board()[j-1][x] != 'O': 
+                            break
+                        final = self.convert_to_tile(x, j - 1)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving right
+                    for k in range(x+1, 8, 2):
+                        # out of bounds
+                        if k > 7 or (k + 1) > 7:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if state.board.get_board()[y][k] != colour_opp or state.board.get_board()[y][k + 1] != 'O': 
+                            break
+                        final = self.convert_to_tile(k + 1, y)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving down
+                    for l in range(y+1, 8, 2):
+                        # out of bounds
+                        if l > 7 or (l + 1) > 7:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if state.board.get_board()[l][x] != colour_opp or state.board.get_board()[l + 1][x] != 'O': 
+                            break
+                        final = self.convert_to_tile(x, l + 1)
+                        moves.append(f"{initial}-{final}") 
+        return moves
+    
+    def convert_to_tile(self, x, y):
+        column = "ABCDEFGH"
+        letter = column[x]
+        number = str(8 - y)
+        return letter + number
 
 # Implements the playing board - 8x8, alternating black and white tiles
 class KonaneBoard:
@@ -271,70 +368,6 @@ class KonaneBoard:
                 self.update_by_move(action)
             count += 1
 
-    def generate_valid_moves(self, colour_turn):
-        if colour_turn == "B":
-            colour_opp = "W"
-        else: 
-            colour_opp = "B"
-        
-        moves = []
-        for y in range(8):
-            for x in range(8):
-                # found piece to move
-                if self.board[y][x] == colour_turn:
-                    initial = self.convert_to_tile(x, y)
-                    #moving left
-                    for k in range(x - 1, -1, -2):
-                        # out of bounds
-                        if k < 0 or (k - 1) < 0:
-                            break
-                        # continues to look for multiple jumps as long as it stays valid
-                        if self.board[y][k] != colour_opp or self.board[y][k - 1] != 'O': 
-                            break
-                        final = self.convert_to_tile(k-1, y)
-                        moves.append(f"{initial}-{final}") 
-
-                    #moving up
-                    for j in range(y-1, -1, -2):
-                        # out of bounds
-                        if j < 0 or (j - 1) < 0:
-                            break
-                        # continues to look for multiple jumps as long as it stays valid
-                        if self.board[j][x] != colour_opp or self.board[j-1][x] != 'O': 
-                            break
-                        final = self.convert_to_tile(x, j - 1)
-                        moves.append(f"{initial}-{final}") 
-
-                    #moving right
-                    for k in range(x+1, 8, 2):
-                        # out of bounds
-                        if k > 7 or (k + 1) > 7:
-                            break
-                        # continues to look for multiple jumps as long as it stays valid
-                        if self.board[y][k] != colour_opp or self.board[y][k + 1] != 'O': 
-                            break
-                        final = self.convert_to_tile(k + 1, y)
-                        moves.append(f"{initial}-{final}") 
-
-                    #moving down
-                    for l in range(y+1, 8, 2):
-                        # out of bounds
-                        if l > 7 or (l + 1) > 7:
-                            break
-                        # continues to look for multiple jumps as long as it stays valid
-                        if self.board[l][x] != colour_opp or self.board[l + 1][x] != 'O': 
-                            break
-                        final = self.convert_to_tile(x, l + 1)
-                        moves.append(f"{initial}-{final}") 
-        return moves
-    
-    
-    def convert_to_tile(self, x, y):
-        letter = self.x[x]
-        number = str(8 - y)
-        return letter + number
-    
-
 def main():
     '''
     argv = sys.argv
@@ -356,7 +389,8 @@ def main():
 
     board.print_board()
 
-    moves = board.generate_valid_moves('B')
+    agent = KonaneAI("B", board)
+    moves = agent.generate_valid_moves(Node(board))
     print(moves)
     #KonaneBoard().play_game()
 
