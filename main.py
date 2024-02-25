@@ -1,37 +1,38 @@
 import sys
 import time
 import copy
-
 THINKING_TIME = 10
 # This file will contains all the implementation of the minimax algorithm and aplha-beta pruning. (subject to change)
 
+# Implements a node (state) of a game for a tree to search and evaluate using alphabeta
 class Node:
-    def __init__(self, board, colour_to_move='B', action ="", parent=None):
+    def __init__(self, board, colours_turn="B", action ="", parent=None):
       self.parent = parent
       self.board = board
-      self.colours_turn = colour_to_move
+      self.colours_turn = colours_turn
       self.action = action
+      self.value = None
       self.successors = []
 
     def get_successors(self, state):
-        return
-
+        return self.successors
+    
+    # preprocess the first mvoes of the game for white and black
     def preprocess_first_moves(self):
         # 4 possible moves for Black - remove piece at A8, D5, E4 or H1
-        self.board.print()
         self.insert_successor("A8", "W")
         self.insert_successor("D5", "W")
         self.insert_successor("E4", "W")
         self.insert_successor("H1", "W")
-        print('wrvw')
+
+        #possible white moves in a list [[for A8],[for D5],[for E4],[for H1]]
         white_moves = [["B8", "A7"], ["D6", "C5", "E5", "D4"], ["E5", "D4", "F4", "E3"], ["H2", "G1"]]
-        for i in range(len(white_moves)):
+        for i in range(len(white_moves)): # goes through black's first moves
             move = self.successors[i]
-            for j in white_moves[i]:
-                print('wrvw')
+            for j in white_moves[i]: # inserts possible white moves 
                 move.insert_successor(j, "B")
-                move.successors[-1].board.print()
-        
+    
+    # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successor(self, move, colour):
         successor = KonaneBoard(self.board.get_board())
         successor.update_by_move(move)
@@ -41,20 +42,59 @@ class Node:
 class KonaneAI:
     def __init__(self, colour, state = None):
         self.total_moves = 0
-        self.stae = state
+        self.state = Node(KonaneBoard())
         self.best_moves = []
         self.olour = colour
 
-    #actions -> move piece, wait, remove piece
+    #actions -> move piece, remove piece etc.
     def action(self, state):
         if self.total_moves == 0 and self.colour == 'W':
-            print()
+            self.state.preprocess_first_moves()
         elif self.total_moves == 0 and self.colour == 'B':
-            print()
+            self.state.preprocess_first_moves()
         else:
             print()
 
         return self.__actions.pop()
+    
+    # implementing and modifying the given code for alpha beta pruning from the Adversarial search slides
+    # work in progress
+    def alpha_beta_search(self):
+        v = self.max_value(self.state, -100, 100)
+        action = self.state.get_successors.find(v)
+        return action 
+
+    # work in progress
+    def max_value(self, alpha , beta):
+        if self.cutoff_test(): return self.evaluation()
+        v = -100
+        for s in self.state.get_successors:
+            v = max(v, s.min_value(alpha, beta))
+            if v >= beta: return v
+            alpha = max(alpha, v)
+        return v
+
+    # work in progress
+    def min_value(self, alpha, beta):
+        if self.cutoff_test(): return self.evaluation()
+        v = 100
+        for s in self.state.get_successors:
+            v = min(v, s.max_value(alpha, beta))
+            if v <= alpha: return v
+            beta = min(beta, v)
+            return v
+
+    # work in progress
+    def cutoff_test(self):
+        return
+
+    # work in progress
+    def successors(self):
+        return
+
+    # work in progress
+    def evaluation(self):
+        return
         
 
 # Implements the playing board - 8x8, alternating black and white tiles
