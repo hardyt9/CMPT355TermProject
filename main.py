@@ -35,22 +35,12 @@ class KonaneAI:
     # preprocess the first moves of the game for white and black
     def first_move_B(self, state):
         # 4 possible moves for Black - remove piece at A8, D5, E4 or H1
-        state.insert_successors("A8", state)
-        state.insert_successors("D5", state)
-        state.insert_successors("E4", state)
-        state.insert_successors("H1", state)
-        return
+        self.insert_successors("D5", state)
+        self.insert_successors("E4", state)
 
     def first_move_W(self, state):
-        if state[0][0] == 'O':
-            self.insert_successors(["B8", "A7"], state)
-        elif state[3][3] == 'O':
-            self.insert_successors(["D6", "C5", "E5", "D4"], state)
-        elif state[4][4] == 'O':
-            self.insert_successors(["E5", "D4", "F4", "E3"], state)
-        elif state[7][7] == 'O':
-            self.insert_successors(["H2", "G1"], state)
-        return  
+        self.insert_successors(["E5", "D4"], state)
+
 
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successors(self, moves, state):
@@ -127,7 +117,7 @@ class KonaneAI:
             if state.board == KonaneBoard():
                 self.first_move_B(state)
             
-            elif state.action in ["A8", "D5", "E4", "H1"]:
+            elif state.action in ["D5", "E4"]:
                 self.first_move_W(state)
             
             else:
@@ -143,6 +133,79 @@ class KonaneAI:
     # work in progress
     def evaluation(self, state):
         return
+
+    # finds possible moves in current state 
+    # to-do - replace with recursive fxn to clean up
+    def possible_moves(self, state):
+        # determines current color for detecting moves
+        if self.colour == 'B':
+            colour_opp = 'W'
+        else:
+            colour_opp = 'B'
+        
+        letters = 'ABCDEFGH'
+        moves = []
+        board = state.get_board()
+
+        for row_pos in range(8):
+            for piece_pos in range(8): # for every piece on the board, checks if piece is a blank
+                
+                if board[row_pos][piece_pos] == 'O':
+                    # horizontal captures - can only capture if 'O' in columns c-f
+                    
+                    if piece_pos >= 2 and piece_pos <= 5:
+                        # checking captures from right to left
+                        if board[row_pos][piece_pos-1] == colour_opp and board[row_pos][piece_pos-2] == self.colour:
+                            moves.append(f'{letters[piece_pos-2]}{8-row_pos}-{letters[piece_pos]}{8-row_pos}')
+                            try:
+                                # protects in case of out of range
+                                # double jumps
+                                if board[row_pos][piece_pos+1] == colour_opp and board[row_pos][piece_pos+2] == 'O':
+                                    moves.append(f'{letters[piece_pos-2]}{8-row_pos}-{letters[piece_pos+2]}{8-row_pos}')
+                                    # triple jumps
+                                    if board[row_pos][piece_pos+3] == colour_opp and board[row_pos][piece_pos+4] == 'O':
+                                        moves.append(f'{letters[piece_pos-2]}{8-row_pos}-{letters[piece_pos+4]}{8-row_pos}')
+                            except:
+                                pass
+                        
+                        # checking captures from left to right
+                        if board[row_pos][piece_pos+1] == colour_opp and board[row_pos][piece_pos+2] == self.colour:
+                            moves.append(f'{letters[piece_pos+2]}{8-row_pos}-{letters[piece_pos]}{8-row_pos}') 
+                            try:
+                                # double jump
+                                if board[row_pos][piece_pos-1] == colour_opp and board[row_pos][piece_pos-2] == 'O':
+                                    moves.append(f'{letters[piece_pos+2]}{8-row_pos}-{letters[piece_pos-2]}{8-row_pos}')
+                                    # triple jump
+                                    if board[row_pos][piece_pos-3] == colour_opp and board[row_pos][piece_pos-4] == 'O':
+                                        moves.append(f'{letters[piece_pos+2]}{8-row_pos}-{letters[piece_pos-4]}{8-row_pos}')
+                            except:
+                                pass                        
+                    
+                    # vertical captures - can only capture if 'O' in rows 3-6
+                    if row_pos >= 2 and row_pos <= 5:
+                        if board[row_pos-1][piece_pos] == colour_opp and board[row_pos-2][piece_pos] == self.colour:
+                            moves.append(f'{letters[piece_pos]}{8-row_pos+2}-{letters[piece_pos]}{8-row_pos}') 
+                            try:
+                                if board[row_pos+1][piece_pos] == colour_opp and board[row_pos+2][piece_pos] == 'O':
+                                    moves.append(f'{letters[piece_pos]}{8-row_pos+2}-{letters[piece_pos]}{8-row_pos-2}')
+                                    if board[row_pos+3][piece_pos] == colour_opp and board[row_pos+4][piece_pos] == 'O':
+                                        moves.append(f'{letters[piece_pos]}{8-row_pos+2}-{letters[piece_pos]}{8-row_pos-4}')
+                            except:
+                                pass
+
+                        if board[row_pos+1][piece_pos] == colour_opp and board[row_pos+2][piece_pos] == self.colour:
+                            moves.append(f'{letters[piece_pos]}{8-row_pos-2}-{letters[piece_pos]}{8-row_pos}') 
+                            try:
+                                if board[row_pos-1][piece_pos] == colour_opp and board[row_pos-2][piece_pos] == 'O':
+                                    moves.append(f'{letters[piece_pos]}{8-row_pos-2}-{letters[piece_pos]}{8-row_pos+2}')
+                                    if board[row_pos-3][piece_pos] == colour_opp and board[row_pos-4][piece_pos] == 'O':
+                                        moves.append(f'{letters[piece_pos]}{8-row_pos-2}-{letters[piece_pos]}{8-row_pos+4}')
+                            except:
+                                pass
+        if moves == []:
+            moves.append('quit')
+        print(f'Possible moves: {moves}')
+        return moves
 
     def generate_valid_moves(self, state):
 
@@ -295,12 +358,6 @@ class KonaneBoard:
                 self.update_by_move(action)
             count += 1
 
-    def get_board_from_file(self, filename):
-        current_board = []
-        with open(filename) as file:
-            for row in file:
-                current_board.append(list(row.strip()))
-        return current_board
 
 def main():
     '''
