@@ -17,6 +17,21 @@ class Node:
     def get_successors(self, state):
         return self.successors
     
+    # preprocess the first mvoes of the game for white and black
+    def preprocess_first_moves(self):
+        # 4 possible moves for Black - remove piece at A8, D5, E4 or H1
+        self.insert_successor("A8", "W")
+        self.insert_successor("D5", "W")
+        self.insert_successor("E4", "W")
+        self.insert_successor("H1", "W")
+
+        #possible white moves in a list [[for A8],[for D5],[for E4],[for H1]]
+        white_moves = [["B8", "A7"], ["D6", "C5", "E5", "D4"], ["E5", "D4", "F4", "E3"], ["H2", "G1"]]
+        for i in range(len(white_moves)): # goes through black's first moves
+            move = self.successors[i]
+            for j in white_moves[i]: # inserts possible white moves 
+                move.insert_successor(j, "B")
+    
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successor(self, move, colour):
         successor = KonaneBoard(self.board.get_board())
