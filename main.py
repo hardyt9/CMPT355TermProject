@@ -31,6 +31,7 @@ class KonaneAI:
         self.best_moves = []
         self.colour = colour
         self.t_table = [state] # not yet optimised into program
+        self.max_depth = 0
 
     # preprocess the first moves of the game for white and black
     def first_move_B(self, state):
@@ -58,8 +59,23 @@ class KonaneAI:
 
     #actions -> move piece, remove piece etc.
     def action(self, board):
+        
+        # keeps doing alpha_beta search until time runs out
+        ''' rough code
+        self.best_moves = []
+        self.max_depth = 2
+        while cur_time != THINKING_TIME:
+            self.best_movest.append(alpha_beta_search())
+            self.max_depth += 1
+
+            # reset values for the next alpha beta search
+            for i in self.t_table:
+                i.value = 0
+        
+        action = self.best_moves.pop()
+        return action
+        '''
         if self.state.board == Node(KonaneBoard()):
-            self.preprocess_first_move_B()
             if self.colour == 'B':
                 action = "D5"
             else:
@@ -361,11 +377,7 @@ class KonaneBoard:
 def main():
     '''
     argv = sys.argv
-    agent = KonaneAI('B')
-
-    n = Node(KonaneBoard())
-    n.preprocess_first_moves('B')
-
+    agent = KonaneAI(arg[2])
     while True:
         agent.action()
         opp_move = input()
