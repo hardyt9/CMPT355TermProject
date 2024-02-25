@@ -1,41 +1,61 @@
 import sys
+import time
+import copy
+
+THINKING_TIME = 10
 # This file will contains all the implementation of the minimax algorithm and aplha-beta pruning. (subject to change)
+
+class Node:
+    def __init__(self, board, colour_to_move='B', action ="", parent=None):
+      self.parent = parent
+      self.board = board
+      self.colours_turn = colour_to_move
+      self.action = action
+      self.successors = []
+
+    def get_successors(self, state):
+        return
+
+    def preprocess_first_moves(self):
+        # 4 possible moves for Black - remove piece at A8, D5, E4 or H1
+        self.board.print()
+        self.insert_successor("A8", "W")
+        self.insert_successor("D5", "W")
+        self.insert_successor("E4", "W")
+        self.insert_successor("H1", "W")
+        print('wrvw')
+        white_moves = [["B8", "A7"], ["D6", "C5", "E5", "D4"], ["E5", "D4", "F4", "E3"], ["H2", "G1"]]
+        for i in range(len(white_moves)):
+            move = self.successors[i]
+            for j in white_moves[i]:
+                print('wrvw')
+                move.insert_successor(j, "B")
+                move.successors[-1].board.print()
+        
+    def insert_successor(self, move, colour):
+        successor = KonaneBoard(self.board.get_board())
+        successor.update_by_move(move)
+        self.successors.append(Node(successor, colour, move, self))
 
 # Implements the minimax algorithm
 class KonaneAI:
-    def __init__(self, state=[]):
-        self.__curr_board_state = state
-        self.__action = []
-    
-    def first_move_W(self, board_file):
-        fh = open(board_file, "r")
-        line = fh.readline()
-        row = 0
-        while line != "":
-            if 'O' in line:
-                break
-            row += 1
-            line = fh.readline()
+    def __init__(self, colour, state = None):
+        self.total_moves = 0
+        self.stae = state
+        self.best_moves = []
+        self.olour = colour
+
+    #actions -> move piece, wait, remove piece
+    def action(self, state):
+        if self.total_moves == 0 and self.colour == 'W':
+            print()
+        elif self.total_moves == 0 and self.colour == 'B':
+            print()
+        else:
+            print()
+
+        return self.__actions.pop()
         
-        if row == 0:
-            return ""
-            
-
-    def first_move_B(self, board_file):
-        
-        return
-    
-    def successors(state):
-
-        return
-
-class Node:
-   def __init__(self, parent, board, colour):
-      self.__parent = parent
-      self.__board = board
-      self.__colour = colour
-      self.__action = ""
-      self.__successors = []
 
 # Implements the playing board - 8x8, alternating black and white tiles
 class KonaneBoard:
@@ -103,26 +123,19 @@ class KonaneBoard:
         for i in self.board:
             print(i)
 
-    
+    def get_board(self):
+        return copy.deepcopy(self.board)
+
 def main():
     argv = sys.argv
-    board = KonaneBoard()
-    agent = KonaneAI()
-    board.print()
-    print('\n')
-    board.update_by_move('E5')
-    board.update_by_move('G3-E3')
-    board.update_by_move('G6-E6')
-    board.update_by_move('A1-A6')
+    agent = KonaneAI('B')
 
+    n = Node(KonaneBoard())
+    n.preprocess_first_moves()
 
-    board.print()
-    #board.convert_file_to_board("test_file.txt")
-
-    #if argv[2] == 'W':
-    #    print()
-    #else:
-    #    print()
+   # while True():
+    #    agent.action()
+     #   opp_move = input()
 
     return
 
