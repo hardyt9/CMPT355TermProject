@@ -31,6 +31,7 @@ class Node:
             for j in white_moves[i]: # inserts possible white moves 
                 move.insert_successor(j, "B")
     
+    # to do - handle adding multiple successors
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successor(self, move, colour):
         successor = KonaneBoard(self.board.get_board())
@@ -266,6 +267,70 @@ class KonaneBoard:
                 self.update_by_move(player.action(self))
             count += 1
 
+    def generate_valid_moves(self, colour_turn):
+        if colour_turn == "B":
+            colour_opp = "W"
+        else: 
+            colour_opp = "B"
+        
+        moves = []
+        for y in range(8):
+            for x in range(8):
+                # found piece to move
+                if self.board[y][x] == colour_turn:
+                    initial = self.convert_to_tile(x, y)
+                    #moving left
+                    for k in range(x - 1, -1, -2):
+                        # out of bounds
+                        if k < 0 or (k - 1) < 0:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if self.board[y][k] != colour_opp or self.board[y][k - 1] != 'O': 
+                            break
+                        final = self.convert_to_tile(k-1, y)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving up
+                    for j in range(y-1, -1, -2):
+                        # out of bounds
+                        if j < 0 or (j - 1) < 0:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if self.board[j][x] != colour_opp or self.board[j-1][x] != 'O': 
+                            break
+                        final = self.convert_to_tile(x, j - 1)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving right
+                    for k in range(x+1, 8, 2):
+                        # out of bounds
+                        if k > 7 or (k + 1) > 7:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if self.board[y][k] != colour_opp or self.board[y][k + 1] != 'O': 
+                            break
+                        final = self.convert_to_tile(k + 1, y)
+                        moves.append(f"{initial}-{final}") 
+
+                    #moving down
+                    for l in range(y+1, 8, 2):
+                        # out of bounds
+                        if l > 7 or (l + 1) > 7:
+                            break
+                        # continues to look for multiple jumps as long as it stays valid
+                        if self.board[l][x] != colour_opp or self.board[l + 1][x] != 'O': 
+                            break
+                        final = self.convert_to_tile(x, l + 1)
+                        moves.append(f"{initial}-{final}") 
+        return moves
+    
+    
+    def convert_to_tile(self, x, y):
+        letter = self.x[x]
+        number = str(8 - y)
+        return letter + number
+    
+
 def main():
     '''
     argv = sys.argv
@@ -280,7 +345,16 @@ def main():
 
     return
     '''
-    KonaneBoard().play_game()
+    board = KonaneBoard()
+    board.print_board()
+    board.update_by_move("F5")
+    board.update_by_move("D5")
+
+    board.print_board()
+
+    moves = board.generate_valid_moves('B')
+    print(moves)
+    #KonaneBoard().play_game()
 
 if __name__ == "__main__":
     main()
