@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import time
 import copy
@@ -70,7 +72,7 @@ class KonaneAI:
             action = random.sample(self.possible_moves(board), 1)[0]
         self.total_moves += 1
 
-        print(f'Move chosen: {action}')
+        #print(f'Move chosen: {action}')
 
         return action #self.__actions.pop()
     
@@ -294,43 +296,35 @@ class KonaneBoard:
         return current_board
 
 def main():
-    '''
-    argv = sys.argv
-    agent = KonaneAI('B')
-
-    n = Node(KonaneBoard())
-    n.preprocess_first_moves('B')
-
-    while True:
-        agent.action()
-        opp_move = input()
-
-    return
-    '''
     board = KonaneBoard()
-    
-    #colour = "B"
+
     #filename = "test.txt"
     filename = sys.argv[1]
     colour = sys.argv[2]
-
+    
     board.board = board.get_board_from_file(filename)
-
-    board.print_board()
-    board.update_by_move("D5")
-    board.update_by_move("D4")
-    board.print_board()
-
     agent = KonaneAI(colour, board)
 
+    if colour == "B":
+        move = "D5"
+        
+    else:
+        move = "E5"
+
+    board.update_by_move(move)
+    print(move)
 
     while True:
-        moves = agent.generate_valid_moves(Node(board))
-        print(moves)
-        print(random.sample(moves, 1)[0])
-        next_move = input()
-        board.update_by_move(next_move)
-    #KonaneBoard().play_game()
+        opp_move = input()
+        board.update_by_move(opp_move)
+        state = Node(board)
+        state.colours_turn = "W"
+        moves = agent.generate_valid_moves(state)
+        move = random.sample(moves, 1)[0]
+        board.update_by_move(move)
+        print(move)
+
+    
 
 if __name__ == "__main__":
     main()
