@@ -313,16 +313,28 @@ def main():
 
     board.update_by_move(move)
     print(move)
-
+    
+    game_over = False
     while True:
-        opp_move = input()
+        try:
+            opp_move = input()
+        except:
+            return
+        if opp_move == "You won":
+            game_over = True
         board.update_by_move(opp_move)
         state = Node(board)
         state.colours_turn = "W"
         moves = agent.generate_valid_moves(state)
-        move = random.sample(moves, 1)[0]
-        board.update_by_move(move)
+        if len(moves) == 0:
+            move = "You won"
+            game_over = True
+        else:
+            move = random.sample(moves, 1)[0]
+            board.update_by_move(move)
         print(move)
+        if game_over:
+            return
 
     
 
