@@ -304,12 +304,15 @@ def main():
     
     board.board = board.get_board_from_file(filename)
     agent = KonaneAI(colour, board)
-
+    turn_count = 0
+    
     if colour == "B":
         move = "D5"
+        turn_count +=1
         
     else:
         move = "E5"
+        turn_count += 2
 
     board.update_by_move(move)
     print(move)
@@ -324,7 +327,10 @@ def main():
             game_over = True
         board.update_by_move(opp_move)
         state = Node(board)
-        state.colours_turn = "W"
+        if turn_count % 2 == 0:
+            state.colours_turn = "W"
+        else:
+            state.colous_turn = "B"
         moves = agent.generate_valid_moves(state)
         if len(moves) == 0:
             move = "You won"
