@@ -19,7 +19,7 @@ class Node:
       self.alpha = -1000
       self.beta = 1000
 
-    def get_successors(sel0f):
+    def get_successors(self):
         return self.successors
     
     def get_value(self):
@@ -140,6 +140,7 @@ class KonaneAI:
         return False
 
     def is_first_move_W(self, state):
+        
         board_1 = KonaneBoard()
         board_1.update_by_move("D5")
 
@@ -150,6 +151,12 @@ class KonaneAI:
             return True
         else: 
             return False
+
+    def move_count(self, state):
+        count = 0 
+        for row in state.board.board:
+            count += row.count('O')
+        return count
 
     # work in progress
     def evaluation(self, state):
@@ -173,8 +180,13 @@ class KonaneAI:
 
 
     def generate_valid_moves(self, state):
-        if state.board == KonaneBoard(): return ["D5", "E4"] # first move of B - remove piece
+        '''
+        if state.board == KonaneBoard().board: return ["D5", "E4"] # first move of B - remove piece
         if self.is_first_move_W(state): return ["E5", "D4"] # first move of W - remove piece
+        '''
+        move_count = self.move_count(state)
+        if move_count == 0: return ["D5", "E4"] # first move of B - remove piece
+        elif move_count == 1: return ["E5", "D4"] # first move of W - remove piece
 
         # identify opponent's colour
         if state.colours_turn == "B": colour_opp = "W"
@@ -287,8 +299,6 @@ class KonaneBoard:
                 self.board[prev_y][j] = 'O'
             self.board[new_y][new_x] = colour
     
-    
-    
     # letter - x, number - y Ex. E5 -> 'E', '5'
     def convert_letter(self, letter):
         return self.x.find(letter)
@@ -306,78 +316,42 @@ class KonaneBoard:
 
     def get_board(self):
         return copy.deepcopy(self.board)
-    
-    def play_game(self):
-        count = 0
-        player_1 = KonaneAI('B')
-        player_2 = KonaneAI('W')
-        action = ''
-        while action != 'quit':
-            self.print_board()
-            if count % 2 == 0:
-                player = player_1
-            else:
-                player = player_2
-            action = player.action(self)
-            if action != 'quit':
-                self.update_by_move(action)
-            count += 1
 
-    def get_board_from_file(self, filename):
-        current_board = []
-        with open(filename) as file:
-            for row in file:
-                current_board.append(list(row.strip()))
-        return current_board
+def get_board_from_file(filename):
+    current_board = []
+    with open(filename) as file:
+        for row in file:
+            current_board.append(list(row.strip()))
+    return current_board
 
 def main():
-    board = KonaneBoard()
 
-    #filename = "test.txt"
     filename = sys.argv[1]
     colour = sys.argv[2]
-    
-    board.board = board.get_board_from_file(filename)
-    agent = KonaneAI(colour, board)
-    turn_count = 0
-    
-    if colour == "B":
-        move = "D5"
-        turn_count +=1
-        
-    else:
-        move = "E5"
-        turn_count += 2
 
-    board.update_by_move(move)
-    print(move)
+    board = KonaneBoard(get_board_from_file(filename))
+    agent = KonaneAI(colour, board)
+    state = Node(board, colour)
+
     
-    game_over = False
     while True:
+        moves = agent.generate_valid_moves(state)
+        
+        if len(moves) == 0:
+            print("You won")
+            return
+        else:
+            move = random.sample(moves, 1)[0]
+            board.update_by_move(move)
+            print(move)
+        
         try:
             opp_move = input()
         except:
             return
-        if opp_move == "You won":
-            game_over = True
-        board.update_by_move(opp_move)
-        state = Node(board)
-        if turn_count % 2 == 0:
-            state.colours_turn = "W"
-        else:
-            state.colous_turn = "B"
-        moves = agent.generate_valid_moves(state)
-        if len(moves) == 0:
-            move = "You won"
-            game_over = True
-        else:
-            move = random.sample(moves, 1)[0]
-            board.update_by_move(move)
-        print(move)
-        if game_over:
-            return
 
-    
+        board.update_by_move(opp_move)
+
 
 if __name__ == "__main__":
     main()
