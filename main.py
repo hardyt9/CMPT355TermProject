@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import time
 import copy
@@ -330,29 +332,52 @@ class KonaneBoard:
 
 def main():
     board = KonaneBoard()
-    
-    #colour = "B"
+
     #filename = "test.txt"
     filename = sys.argv[1]
     colour = sys.argv[2]
-
+    
     board.board = board.get_board_from_file(filename)
-
-    board.print_board()
-    board.update_by_move("D5")
-    board.update_by_move("D4")
-    board.print_board()
-
     agent = KonaneAI(colour, board)
+    turn_count = 0
+    
+    if colour == "B":
+        move = "D5"
+        turn_count +=1
+        
+    else:
+        move = "E5"
+        turn_count += 2
 
-
+    board.update_by_move(move)
+    print(move)
+    
+    game_over = False
     while True:
-        moves = agent.generate_valid_moves(Node(board))
-        print(moves)
-        print(random.sample(moves, 1)[0])
-        next_move = input()
-        board.update_by_move(next_move)
-    #KonaneBoard().play_game()
+        try:
+            opp_move = input()
+        except:
+            return
+        if opp_move == "You won":
+            game_over = True
+        board.update_by_move(opp_move)
+        state = Node(board)
+        if turn_count % 2 == 0:
+            state.colours_turn = "W"
+        else:
+            state.colous_turn = "B"
+        moves = agent.generate_valid_moves(state)
+        if len(moves) == 0:
+            move = "You won"
+            game_over = True
+        else:
+            move = random.sample(moves, 1)[0]
+            board.update_by_move(move)
+        print(move)
+        if game_over:
+            return
+
+    
 
 if __name__ == "__main__":
     main()
