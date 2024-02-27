@@ -17,7 +17,7 @@ class Node:
       self.alpha = -1000
       self.beta = 1000
 
-    def get_successors(self):
+    def get_successors(sel0f):
         return self.successors
     
     def get_value(self):
@@ -32,10 +32,22 @@ class KonaneAI:
         self.state = state
         self.best_moves = []
         self.colour = colour
+        self.max_depth = 2
         self.t_table = [state] # not yet optimised into program, should store KonaneBoard objects
 
     #actions -> move piece, remove piece etc.
     def action(self, board):
+
+        start = time.time()
+        self.max_depth = 2
+        best_action = []
+        while time.time() - start < 9.5:
+            best_action.append(self.alpha_beta_search())
+            self.max_depth += 1
+        
+        return best_action.pop()
+    
+        '''
         if self.state.board == Node(KonaneBoard()):
             self.preprocess_first_move_B()
             if self.colour == 'B':
@@ -51,6 +63,7 @@ class KonaneAI:
         print(f'Move chosen: {action}')
 
         return action #self.__actions.pop()
+        '''
 
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successors(self, moves, state):
@@ -125,13 +138,13 @@ class KonaneAI:
         return False
 
     def is_first_move_W(self, state):
-        state1 = KonaneBoard()
-        state1.update_by_move("D5")
+        board_1 = KonaneBoard()
+        board_1.update_by_move("D5")
 
-        state2 = KonaneBoard()
-        state2.update_by_move("E4")
+        board_2 = KonaneBoard()
+        board_2.update_by_move("E4")
 
-        if state.board.board == state1.board.board or state.board.board == state2.board.board:
+        if state.board.board == board_1.board or state.board.board == board_2.board:
             return True
         else: 
             return False
@@ -316,19 +329,6 @@ class KonaneBoard:
         return current_board
 
 def main():
-    '''
-    argv = sys.argv
-    agent = KonaneAI('B')
-
-    n = Node(KonaneBoard())
-    n.preprocess_first_moves('B')
-
-    while True:
-        agent.action()
-        opp_move = input()
-
-    return
-    '''
     board = KonaneBoard()
     
     #colour = "B"
