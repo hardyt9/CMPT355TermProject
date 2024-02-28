@@ -84,42 +84,42 @@ class KonaneAI:
     # modified to return a Node instead of an action
     def alpha_beta_search(self):
         depth = 0
-        v = self.max_value(depth, self.state)
+        v = self.max_value(depth, self.state, -1000, 1000)
         if v == None: return None # thinking time reached, terminate current search
         for s in self.state.get_successors():
             if s.get_value() == v:
                 return s
 
-    def max_value(self, depth, state):
+    def max_value(self, depth, state, alpha, beta):
         if time.time() - self.start > THINKING_TIME:
             return None
         # resets alpha beta for each node for every search - !need to check to see if it works properly
-        state.alpha = -1000
-        state.beta = 1000
+        state.alpha = alpha
+        state.beta = beta
 
         if self.cutoff_test(depth, state): 
             return self.evaluation(state)
         v = -100
         for s in state.get_successors():
-            v2 = self.min_value(depth + 1, s)
+            v2 = self.min_value(depth + 1, s, state.alpha, state.beta)
             if v2 == None: return None # thinking time reached, terminate current search
             v = max(v, v2)
             if v >= state.beta: return v
             state.alpha = max(state.alpha, v)
         return v
 
-    def min_value(self, depth, state):
+    def min_value(self, depth, state, alpha, beta):
         if time.time() - self.start > THINKING_TIME:
             return None
-        # resets alpha beta for each node for every deep search - !need to check to see if it works properyl
-        state.alpha = -1000
-        state.beta = 1000
+        # resets alpha beta for each node for every search - !need to check to see if it works properly
+        state.alpha = alpha
+        state.beta = beta
 
         if self.cutoff_test(depth, state): 
             return self.evaluation(state)
         v = 100
         for s in state.get_successors():
-            v2 = self.max_value(depth + 1, s)
+            v2 = self.max_value(depth + 1, s, state.alpha, state.beta)
             if v2 == None: return None # thinking time reached, terminate current search
             v = min(v, v2)
             if v <= state.alpha: return v
@@ -342,6 +342,8 @@ def convert_file_to_board(filename):
         for letter in line:
             row.append(letter)
         line = fh.readline()
+
+    fh.close()
     return board
 
 def main():
@@ -358,7 +360,7 @@ def main():
         #print(time.time() - agent.start) - check time to see if within thinking time
         opp_action = input()
         agent.reset()
-        agent.update_state(opp_action)
+        agent.update_state(opp_action) # update state by by using opponent's input
         print(agent.action())
 
 if __name__ == "__main__":
