@@ -3,7 +3,7 @@ import time
 import copy
 import random
 
-THINKING_TIME = 10
+THINKING_TIME = 9.9
 # This file will contains all the implementation of the minimax algorithm and alpha-beta pruning. (subject to change)
 
 # Implements a node (state) of a game for a tree to search and evaluate using alphabeta
@@ -17,11 +17,11 @@ class Node:
       self.alpha = -1000
       self.beta = 1000
 
-    def get_successors(sel0f):
+    def get_successors(self):
         return self.successors
     
     def get_value(self):
-        return self.value    
+        return self.beta
     
     def get_action(self):
         return self.action
@@ -34,39 +34,41 @@ class KonaneAI:
         self.colour = colour
         self.max_depth = 2
         self.t_table = [state] # not yet optimised into program, should store KonaneBoard objects
+        self.start = 0
+
+    # reset start time and best_moves
+    def reset(self):
+        self.start = time.time()
+        self.best_moves = []
+
+    # update current KonaneAI state by the state with self.action == to the input()
+    def update_state(self, move):
+        for i in self.state.get_successors():
+            if i.action == move:
+                self.state = i
+                return
+        
+        self.state.board.update_by_move(move)
+        self.state = Node(self.state.board, self.colour, move)
+        return
 
     #actions -> move piece, remove piece etc.
-    def action(self, board):
-
-        start = time.time()
+    def action(self):
         self.max_depth = 2
-        best_action = []
-        while time.time() - start < 9.5:
-            best_action.append(self.alpha_beta_search())
+        while time.time() - self.start < THINKING_TIME:
+            best_state = self.alpha_beta_search()
+            if best_state == None:
+                break
+            self.best_moves.append(best_state)
             self.max_depth += 1
+            print(best_state.action, self.max_depth)
         
-        return best_action.pop()
-    
-        '''
-        if self.state.board == Node(KonaneBoard()):
-            self.preprocess_first_move_B()
-            if self.colour == 'B':
-                action = "D5"
-            else:
-                action = "D4"
-
-        else:
-            #action = input()
-            action = random.sample(self.possible_moves(board), 1)[0]
-        self.total_moves += 1
-
-        print(f'Move chosen: {action}')
-
-        return action #self.__actions.pop()
-        '''
+        self.state = self.best_moves.pop()
+        return self.state.action
 
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successors(self, moves, state):
+
         if state.colours_turn == "B":
             colour = "W"
         else: 
@@ -84,14 +86,15 @@ class KonaneAI:
     def alpha_beta_search(self):
         depth = 0
         v = self.max_value(depth, self.state)
+        if v == None: return None
         for s in self.state.get_successors():
             if s.get_value() == v:
-                return s.get_action()
-
-        return self.state.get_successors()[0]
+                return s
 
     # work in progress
     def max_value(self, depth, state):
+        if time.time() - self.start > THINKING_TIME:
+            return None
         # resets alpha beta for each node for every deep search - need to check to see if it works
         state.alpha = -1000
         state.beta = 1000
@@ -100,13 +103,17 @@ class KonaneAI:
             return self.evaluation(state)
         v = -100
         for s in state.get_successors():
-            v = max(v, s.min_value(depth + 1, s))
+            v2 = self.min_value(depth + 1, s)
+            if v2 == None: return None
+            v = max(v, v2)
             if v >= state.beta: return v
             state.alpha = max(state.alpha, v)
         return v
 
     # work in progress
     def min_value(self, depth, state):
+        if time.time() - self.start > THINKING_TIME:
+            return None
         # resets alpha beta for each node for every deep search - need to check to see if it works
         state.alpha = -1000
         state.beta = 1000
@@ -115,7 +122,9 @@ class KonaneAI:
             return self.evaluation(state)
         v = 100
         for s in state.get_successors():
-            v = min(v, s.max_value(depth + 1, s))
+            v2 = self.max_value(depth + 1, s)
+            if v2 == None: return None
+            v = min(v, v2)
             if v <= state.alpha: return v
             state.beta = min(state.beta, v)
             return v
@@ -132,7 +141,7 @@ class KonaneAI:
             return True
         
         # terminal node
-        if len(state.get_successors(0)) == 0:
+        if len(state.get_successors()) == 0:
             return True
         
         return False
@@ -154,15 +163,15 @@ class KonaneAI:
         # Evaluation #1: difference between total moves and opponents moves
         # agent's turn for the state
         if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
-            if len(state.get_successors(0)) == 0: 
+            if len(state.get_successors()) == 0: 
                 return -100 # loss - terminal node
             total_moves = len(state.get_successors())
-            total_moves_opp = state.predecessor.get_successors()
+            total_moves_opp = len(state.predecessor.get_successors())
         else: # opponents' turn for the state
-            if len(state.get_successors(0)) == 0:
+            if len(state.get_successors()) == 0:
                  return 100 # win - terminal node
             total_moves_opp = len(state.get_successors())
-            total_moves = state.predecessor.get_successors()
+            total_moves = len(state.predecessor.get_successors())
         
         # Other evaluations...
             
@@ -171,8 +180,14 @@ class KonaneAI:
 
 
     def generate_valid_moves(self, state):
-        if state.board == KonaneBoard(): return ["D5", "E4"] # first move of B - remove piece
-        if self.is_first_move_W(state): return ["E5", "D4"] # first move of W - remove piece
+        # diagonally symmetric, so just choose one to make algo little more efficient on first moves going through less nodes
+        if state.board.board == KonaneBoard().board: 
+            return random.choice([["D5"], ["E4"]]) # first move of B - remove piece 
+        if self.is_first_move_W(state): 
+            if state.predecessor == None: # if agent is W, need only onoe since symmetric, else must generate all possible moves for B
+                return random.choice([["E5"], ["D4"]] )
+            return ["E5", "D4"] # first move of W - remove piece
+        
 
         # identify opponent's colour
         if state.colours_turn == "B": colour_opp = "W"
@@ -266,6 +281,7 @@ class KonaneBoard:
         prev_y = self.convert_number(move[1])
         # color of moving piece
         colour = self.board[prev_y][prev_x]
+
         if len(move) == 2: # remove piece
             self.board[prev_y][prev_x] = 'O'
             return
@@ -278,7 +294,7 @@ class KonaneBoard:
             if new_y < prev_y: step = -1
             for i in range(prev_y, new_y, step): # can handle multiple jumps
                 self.board[i][prev_x] = 'O'
-            self.board[int(new_y)][new_x] = colour
+            self.board[new_y][new_x] = colour
         else: # horizontal/row jump
             if new_x < prev_x: step = -1
             for j in range(prev_x, new_x, step): # can handle multiple jumps
@@ -328,31 +344,34 @@ class KonaneBoard:
                 current_board.append(list(row.strip()))
         return current_board
 
+def convert_file_to_board(filename):
+    board = []
+    fh = open(filename, "r")
+    line = fh.readline()
+    while line != "":
+        row = []
+        line.strip("\n")
+        for letter in line:
+            row.append(letter)
+        line = fh.readline()
+    return board
+
 def main():
     board = KonaneBoard()
-    
-    #colour = "B"
-    #filename = "test.txt"
     filename = sys.argv[1]
     colour = sys.argv[2]
-
-    board.board = board.get_board_from_file(filename)
-
+    board = KonaneBoard(convert_file_to_board(filename))
     board.print_board()
-    board.update_by_move("D5")
-    board.update_by_move("D4")
-    board.print_board()
+    agent = KonaneAI(colour, Node(board))
 
-    agent = KonaneAI(colour, board)
-
-
+    # use algo for first moves as well to maximizse thinking time by expanding nodes 
     while True:
-        moves = agent.generate_valid_moves(Node(board))
-        print(moves)
-        print(random.sample(moves, 1)[0])
-        next_move = input()
-        board.update_by_move(next_move)
-    #KonaneBoard().play_game()
+        agent.reset()
+        print(agent.action())
+        #print(time.time() - agent.start) - check time to see if within thinking time
+        move = input()
+        agent.update_state(move)
+        
 
 if __name__ == "__main__":
     main()
