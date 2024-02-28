@@ -36,35 +36,35 @@ class KonaneAI:
         self.t_table = [state] # not yet optimised into program, should store KonaneBoard objects
         self.start = 0
 
-    # reset start time and best_moves
+    # reset konane agent values for max_depth, start (timer), and best_moves for newly updated state
     def reset(self):
         self.start = time.time()
         self.best_moves = []
+        self.max_depth = 2
 
     # update current KonaneAI state by the state with self.action == to the input()
     def update_state(self, move):
         for i in self.state.get_successors():
-            if i.action == move:
+            if i.get_action() == move:
                 self.state = i
                 return
-        
+        # create a new state if state was not found as a successor of the previous state
         self.state.board.update_by_move(move)
         self.state = Node(self.state.board, self.colour, move)
         return
 
     #actions -> move piece, remove piece etc.
     def action(self):
-        self.max_depth = 2
         while time.time() - self.start < THINKING_TIME:
             best_state = self.alpha_beta_search()
-            if best_state == None:
+            if best_state == None: # thinking time limit is reached
                 break
             self.best_moves.append(best_state)
             self.max_depth += 1
-            print(best_state.action, self.max_depth)
+            print(best_state.get_action(), self.max_depth)
         
         self.state = self.best_moves.pop()
-        return self.state.action
+        return self.state.get_action()
 
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successors(self, moves, state):
@@ -78,24 +78,22 @@ class KonaneAI:
             # create a new board with updated move
             successor = KonaneBoard(state.board.get_board())
             successor.update_by_move(move)
-
             state.get_successors().append(Node(successor, colour, move, state))
     
     # implementing and modifying the given code for alpha beta pruning from the Adversarial search slides
-    # work in progress
+    # modified to return a Node instead of an action
     def alpha_beta_search(self):
         depth = 0
         v = self.max_value(depth, self.state)
-        if v == None: return None
+        if v == None: return None # thinking time reached, terminate current search
         for s in self.state.get_successors():
             if s.get_value() == v:
                 return s
 
-    # work in progress
     def max_value(self, depth, state):
         if time.time() - self.start > THINKING_TIME:
             return None
-        # resets alpha beta for each node for every deep search - need to check to see if it works
+        # resets alpha beta for each node for every search - !need to check to see if it works properly
         state.alpha = -1000
         state.beta = 1000
 
@@ -104,17 +102,16 @@ class KonaneAI:
         v = -100
         for s in state.get_successors():
             v2 = self.min_value(depth + 1, s)
-            if v2 == None: return None
+            if v2 == None: return None # thinking time reached, terminate current search
             v = max(v, v2)
             if v >= state.beta: return v
             state.alpha = max(state.alpha, v)
         return v
 
-    # work in progress
     def min_value(self, depth, state):
         if time.time() - self.start > THINKING_TIME:
             return None
-        # resets alpha beta for each node for every deep search - need to check to see if it works
+        # resets alpha beta for each node for every deep search - !need to check to see if it works properyl
         state.alpha = -1000
         state.beta = 1000
 
@@ -123,13 +120,12 @@ class KonaneAI:
         v = 100
         for s in state.get_successors():
             v2 = self.max_value(depth + 1, s)
-            if v2 == None: return None
+            if v2 == None: return None # thinking time reached, terminate current search
             v = min(v, v2)
             if v <= state.alpha: return v
             state.beta = min(state.beta, v)
             return v
 
-        # work in progress
     def cutoff_test(self, depth, state):     
         # generate valid moves for state if not yet generated
         if len(state.get_successors()) == 0:
@@ -145,7 +141,8 @@ class KonaneAI:
             return True
         
         return False
-
+    
+    # check if its W's first move, special case - remove a piece
     def is_first_move_W(self, state):
         board_1 = KonaneBoard()
         board_1.update_by_move("D5")
@@ -158,7 +155,6 @@ class KonaneAI:
         else: 
             return False
 
-    # work in progress
     def evaluation(self, state):
         # Evaluation #1: difference between total moves and opponents moves
         # agent's turn for the state
@@ -184,11 +180,10 @@ class KonaneAI:
         if state.board.board == KonaneBoard().board: 
             return random.choice([["D5"], ["E4"]]) # first move of B - remove piece 
         if self.is_first_move_W(state): 
-            if state.predecessor == None: # if agent is W, need only onoe since symmetric, else must generate all possible moves for B
+            if state.predecessor == None: # if agent is W and first move, need only one since symmetric
                 return random.choice([["E5"], ["D4"]] )
             return ["E5", "D4"] # first move of W - remove piece
-        
-
+    
         # identify opponent's colour
         if state.colours_turn == "B": colour_opp = "W"
         else: colour_opp = "B"
@@ -364,14 +359,15 @@ def main():
     board.print_board()
     agent = KonaneAI(colour, Node(board))
 
-    # use algo for first moves as well to maximizse thinking time by expanding nodes 
+    # use algo for first moves to expand nodes to maximise thinking time
+    agent.reset()
+    print(agent.action())
     while True:
-        agent.reset()
-        print(agent.action())
         #print(time.time() - agent.start) - check time to see if within thinking time
         move = input()
+        agent.reset()
         agent.update_state(move)
-        
+        print(agent.action())
 
 if __name__ == "__main__":
     main()
