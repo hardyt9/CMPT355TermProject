@@ -157,15 +157,14 @@ class KonaneAI:
 
     def evaluation(self, state):
         # Evaluation #1: difference between total moves and opponents moves
-        # agent's turn for the state
+        # agent's turn for the given state
         if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
-            if len(state.get_successors()) == 0: 
-                return -100 # loss - terminal node
+            if len(state.get_successors()) == 0: return -100 # loss - terminal node
             total_moves = len(state.get_successors())
             total_moves_opp = len(state.predecessor.get_successors())
-        else: # opponents' turn for the state
-            if len(state.get_successors()) == 0:
-                 return 100 # win - terminal node
+
+        else: # opponent's turn for the given state
+            if len(state.get_successors()) == 0: return 100 # win - terminal node
             total_moves_opp = len(state.get_successors())
             total_moves = len(state.predecessor.get_successors())
         
@@ -174,9 +173,8 @@ class KonaneAI:
         evaluation = total_moves - total_moves_opp
         return evaluation
 
-
     def generate_valid_moves(self, state):
-        # diagonally symmetric, so just choose one to make algo little more efficient on first moves going through less nodes
+        # diagonally symmetric - choose one to so for first moves, algo goes through less nodes
         if state.board.board == KonaneBoard().board: 
             return random.choice([["D5"], ["E4"]]) # first move of B - remove piece 
         if self.is_first_move_W(state): 
@@ -240,9 +238,6 @@ class KonaneAI:
         letter = column[x]
         number = str(8 - y)
         return letter + number
-    
-    def reset_alpha_beta(self):
-        return
 
 # Implements the playing board - 8x8, alternating black and white tiles
 class KonaneBoard:
@@ -295,8 +290,6 @@ class KonaneBoard:
             for j in range(prev_x, new_x, step): # can handle multiple jumps
                 self.board[prev_y][j] = 'O'
             self.board[new_y][new_x] = colour
-    
-    
     
     # letter - x, number - y Ex. E5 -> 'E', '5'
     def convert_letter(self, letter):
@@ -358,15 +351,14 @@ def main():
     board = KonaneBoard(convert_file_to_board(filename))
     board.print_board()
     agent = KonaneAI(colour, Node(board))
-
     # use algo for first moves to expand nodes to maximise thinking time
     agent.reset()
     print(agent.action())
     while True:
         #print(time.time() - agent.start) - check time to see if within thinking time
-        move = input()
+        opp_action = input()
         agent.reset()
-        agent.update_state(move)
+        agent.update_state(opp_action)
         print(agent.action())
 
 if __name__ == "__main__":
