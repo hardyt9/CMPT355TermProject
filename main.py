@@ -92,14 +92,11 @@ class KonaneAI:
 
     def max_value(self, depth, state, alpha, beta):
         # terminate current search, if it goes over thinking time
-        if time.time() - self.start > THINKING_TIME:
-            return None
-
-        if self.cutoff_test(depth, state): 
-            x =  self.evaluation(state)
-            return x
-        
+        if time.time() - self.start > THINKING_TIME: return None
+        # cutoff/terminal node found
+        if self.cutoff_test(depth, state): return self.evaluation(state)
         v = -1000
+        # recursive
         for s in state.get_successors():
             s.value = self.min_value(depth + 1, s, alpha, beta)
             if s.value == None: return None # terminate current search: thinking time limit reached
@@ -111,13 +108,11 @@ class KonaneAI:
 
     def min_value(self, depth, state, alpha, beta):
          # terminate current search, if it goes over thinking time
-        if time.time() - self.start > THINKING_TIME:
-            return None   
-
-        if self.cutoff_test(depth, state): 
-            x =  self.evaluation(state)
-            return x
+        if time.time() - self.start > THINKING_TIME: return None   
+        # cutoff/terminale node found
+        if self.cutoff_test(depth, state): return self.evaluation(state)
         v = 1000
+        # recursive
         for s in state.get_successors():
             s.value = self.max_value(depth + 1, s, alpha, beta)
             if s.value == None: return None # thinking time reached, terminate current search
@@ -131,15 +126,12 @@ class KonaneAI:
         if len(state.get_successors()) == 0:
             moves = self.generate_valid_moves(state)
             self.insert_successors(moves, state)
-        
         # reach maximum depth for search
         if depth == self.max_depth: 
             return True
-        
         # terminal node
         if len(state.get_successors()) == 0:
             return True
-        
         return False
     
     def is_first_move_W(self, state):
@@ -149,17 +141,10 @@ class KonaneAI:
         # board with E4 removed
         board_2 = KonaneBoard()
         board_2.update_by_move("E4")
-
-        if state.board.board == board_1.board or state.board.board == board_2.board:
-            return True
-        else: 
-            return False
-
-    def move_count(self, state):
-        count = 0 
-        for row in state.board.board:
-            count += row.count('O')
-        return count
+        # check if current state is a first move for W case
+        if state.board.board == board_1.board or state.board.board == board_2.board: return True
+        else: return False
+        
     def evaluation(self, state):
         # Evaluation #1: difference between total moves and opponents moves
         # agent's turn for the given state
