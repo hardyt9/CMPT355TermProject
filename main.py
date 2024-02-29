@@ -25,12 +25,13 @@ Stores the information about the agent's current:
 '''
 class KonaneAI:
     ''' 
-    Node class represents the game state for the search tree 
+    Node class represents a game state inside the search tree
     Contains attributes: 
-        - like the game board (board) 
+        - the previous state of a board (predecessor)
+        - the game board (board) 
         - whose turn it is (colours_turn)
         - the action taken to reach this state (action)
-        - list of successor nodes (successors)  
+        - list of possible future states after a move (successors)  
         - and the value of the node (value)
     '''
     class Node:
@@ -42,34 +43,32 @@ class KonaneAI:
             self.successors = []
             self.value = 0
 
-    '''
-    Purpose: Represents a node (state) of a game for the search tree.
-    '''
     def __init__(self, colour, state = None):
         self.state = self.Node(state, colour)
         self.best_moves = []
         self.colour = colour
         self.max_depth = 2
-        self.t_table = [state] # not yet optimised into program, should store KonaneBoard objects
+        self.t_table = [state] # not yet implemented into program, should store KonaneBoard objects
         self.start = 0
     '''
-    Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for newly updated state.
+    Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for a new search based on updated state.
     '''
     def reset(self):
         self.start = time.time()
         self.best_moves = []
         self.max_depth = 2
     '''
-    Purpose: Update the current KonaneAI state by the state with self.action == to the input.
+    Purpose: Update the current KonaneAI state.
     Parameters:
         - move: The move to update the state.
     '''
     def update_state(self, move):
-        for i in self.state.successors():
-            if i.move == move:
-                self.state = i
+        # update state to a successor if move == successor.move
+        for successor in self.state.successors():
+            if successor.move == move:
+                self.state = successor
                 return
-        # create a new state if state was not found as a successor of the previous state
+        # create a new state if not found within successors()
         self.state.board.update_by_move(move)
         self.state = self.Node(self.state.board, self.colour, move)
         return
@@ -78,13 +77,14 @@ class KonaneAI:
     Return: The chosen action.
     '''
     def action(self):
+        # loop until thinking time lmited reached
         while time.time() - self.start < THINKING_TIME:
             best_state = self.alpha_beta_search()
-            if best_state == None: # thinking time limit is reached
-                break
-            self.best_moves.append(best_state)
+            # thinking time limit reached while searching: terminate loop
+            if best_state == None: break
+            self.best_moves.append(best_state) 
             self.max_depth += 1
-        
+        #FIFO, pop best move from the most recent search of biggest depth, replace current state
         self.state = self.best_moves.pop()
         return self.state.move
     '''
@@ -106,11 +106,11 @@ class KonaneAI:
             successor.update_by_move(move)
             state.successors.append(self.Node(successor, colour, move, state))
     
-    # implementing and modifying the given code for alpha beta pruning from the Adversarial search slides
-    # modified to return a Node instead of an action
+    
     '''
+    Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the alpha-beta search algorithm.
-    Return: The best state found, s.
+    Return: The best state found, s - a Node object.
     '''
     def alpha_beta_search(self):
         depth = 0
@@ -118,8 +118,9 @@ class KonaneAI:
         if v == None: return None # thinking time reached, terminate current search
         for s in self.state.successors():
             if s.value == v:
-                return s
+                return s # modfied to return a state instead of an action to replace current state with
     '''
+    Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the max value function for alpha-beta search.
     Parameters:
         - depth: The current depth in the search tree.
@@ -143,6 +144,7 @@ class KonaneAI:
             alpha = max(alpha, v)
         return v
     '''
+    Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the min value function for alpha-beta search.
     Parameters:
         - depth: The current depth in the search tree.
@@ -152,7 +154,7 @@ class KonaneAI:
     Return: The minimum value, v.
     '''
     def min_value(self, depth, state, alpha, beta):
-         # terminate current search, if it goes over thinking time
+        # terminate current search, if it goes over thinking time
         if time.time() - self.start > THINKING_TIME: return None   
         # cutoff/terminale node found
         if self.cutoff_test(depth, state): return self.evaluation(state)
@@ -166,7 +168,7 @@ class KonaneAI:
             beta = min(beta, v)
         return v
     '''
-    Purpose: Check if a cutoff condition is met.
+    Purpose: Check if a cutoff condition is met based on its depth and if its a terminal/lead node.
     Parameters:
         - depth: The current depth in the search tree.
         - state: Current state/node.
@@ -237,13 +239,14 @@ class KonaneAI:
         if self.is_first_move_W(state): 
             if state.predecessor == None: # first move of W - remove piece
                 return random.choice([["E5"], ["D4"]] )
-            return ["E5", "D4"] # if agent is B, must go through both possible states for the first more of W
+            return ["E5", "D4"] # if agent is B, must go through both possible states for the first move of W
           
         # identify opponent's colour
         if state.colours_turn == "B": colour_opp = "W"
         else: colour_opp = "B"
         
-        moves = []
+        moves = [] # list of valid moves
+        # go through all tiles in board
         for y in range(8):
             for x in range(8):
                 # found piece to move
@@ -290,11 +293,11 @@ class KonaneAI:
                         moves.append(f"{initial}-{final}") 
         return moves
     '''
-    Purpose: Convert coordinates to tile format.
+    Purpose: Convert coordinates to tile format (origin at bottom left with columns as letters)
     Parameters:
-        - x: X-coordinate.
-        - y: Y-coordinate.
-    Return: Tile format.
+        - x: X-coordinate with origin point at top left of the board.
+        - y: Y-coordinate with origin point at top left of the board.
+    Return: string value of tile format of konane board.
     '''
     def convert_to_tile(self, x, y):
         column = "ABCDEFGH"
@@ -303,7 +306,9 @@ class KonaneAI:
         return letter + number
 
 ''' 
-This class creates the playing board for the 8x8 Konane game using alternating black and white tiles. 
+This class creates and modfies a playing board for the 8x8 Konane game using alternating black and white tiles.
+Uses the data structure list containing lists of characters either 'W', 'B', or 'O' for formatting the board.
+'W' for white, 'B' for black, and 'O' for empety tiles.
 '''
 class KonaneBoard:
     '''
@@ -352,28 +357,28 @@ class KonaneBoard:
         return row
         
     '''
-    Purpose: This method updates the game board based on a given move. The move can either be a peice removal or a jump move. 
+    Purpose: This method updates the game board based on a given move. The move can either be a piece removal or a jump move. 
     The method updates the board based off of the rules of the Konane game. 
-        - If the move is a stone peice removal, the corresponding board position is marked as empty ('O').
-        - If the move is a jump, stone peices are removed and moved to a new postition as necessary to execute the jump. 
+        - If the move is a stone piece removal, the corresponding board position is marked as empty ('O').
+        - If the move is a jump, stone pieces are removed and moved to a new postition as necessary to execute the jump. 
+            - moves in between the initial and new position are marked empty ('O').
     Parameters:
             - move: The move to be executed.
     '''
     def update_by_move(self, move):
-        # Convert tile piece to match list of list format
+        # Convert tile piece to match its placement in a list of list
         prev_x = self.convert_letter(move[0])
         prev_y = self.convert_number(move[1])
         # color of moving piece
         colour = self.board[prev_y][prev_x]
         #if the len(move) is greater then 2 it means that it is a jump move otherwise normal move.
-        if len(move) == 2: # remove piece
+        if len(move) == 2: # remove piece case
             self.board[prev_y][prev_x] = 'O'
             return
-        # Convert second tile piece to match list of list format
+        # Convert second tile piece to match its placement in a list of list
         new_x = self.convert_letter(move[3])
         new_y = self.convert_number(move[4])
-        step = 1
-
+        step = 1 
         if prev_x == new_x: # vertical/column jump
             if new_y < prev_y: step = -1 # going up
             for i in range(prev_y, new_y, step): # can handle multiple jumps
@@ -415,7 +420,6 @@ class KonaneBoard:
     '''
     def get_board(self):
         return copy.deepcopy(self.board)
-
     '''
     Purpose: This method reads in the intial congfiguration of the game board from a text file. 
     Parameters: It takes a 'filename' parameter, specifying the name of the file containing the board configuration. 
@@ -429,17 +433,16 @@ def get_board_from_file(filename):
     return current_board
 
 def main():
-
+    # get arguments 'python3 main.py filename colour'
     filename = sys.argv[1]
     colour = sys.argv[2]
-
+    # create agent and current board from the given file
     board = KonaneBoard(get_board_from_file(filename))
     agent = KonaneAI(colour, board)
-
-    # use algo for first moves to expand nodes to maximise thinking time
+    # use algo for first moves maximise thinking time given by expanding nodes
     agent.reset()
     print(agent.action())
-    
+    # input opponents move, output agent move
     while True:
         opp_move = input()
         agent.reset()
