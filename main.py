@@ -323,7 +323,7 @@ def convert_file_to_board(filename):
     return board
 
 def main():
-  ''' USES ALPHA BETA PRUNING - need to integrate into drivercheck
+    ''' USES ALPHA BETA PRUNING - but need to integrate into drivercheck
     filename = sys.argv[1]
     colour = sys.argv[2]
     board = KonaneBoard(convert_file_to_board(filename))
@@ -345,7 +345,6 @@ def main():
     board = KonaneBoard(get_board_from_file(filename))
     agent = KonaneAI(colour, board)
     state = Node(board, colour)
-
     
     while True:
         moves = agent.generate_valid_moves(state)
