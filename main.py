@@ -323,7 +323,7 @@ def convert_file_to_board(filename):
     return board
 
 def main():
-  ''' USES ALPHA BETA PRUNING - need to integrate into drivercheck
+    ''' ~~~Uses Alpha Beta Pruning - need to integrate into drivercheck~~~
     filename = sys.argv[1]
     colour = sys.argv[2]
     board = KonaneBoard(convert_file_to_board(filename))
