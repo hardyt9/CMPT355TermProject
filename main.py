@@ -48,10 +48,8 @@ class KonaneAI:
         for i in self.state.get_successors():
             if i.get_action() == move:
                 self.state = i
-                print('YES')
                 return
         # create a new state if state was not found as a successor of the previous state
-        print('NO')
         self.state.board.update_by_move(move)
         self.state = Node(self.state.board, self.colour, move)
         return
@@ -64,19 +62,18 @@ class KonaneAI:
                 break
             self.best_moves.append(best_state)
             self.max_depth += 1
-            print(best_state.get_action(), self.max_depth, best_state.get_value())
         
         self.state = self.best_moves.pop()
         return self.state.get_action()
 
     # insert the next possible state/node after a legal move happens from the current state/node
     def insert_successors(self, moves, state):
-
+        # the next state of the game will be the opposite colour's turn, assign that colour to successors
         if state.colours_turn == "B":
             colour = "W"
         else: 
             colour = "B"
-
+        # go through all generated valid moves and create successor states
         for move in moves:
             # create a new board with updated move
             successor = KonaneBoard(state.board.get_board())
@@ -94,6 +91,7 @@ class KonaneAI:
                 return s
 
     def max_value(self, depth, state, alpha, beta):
+        # terminate current search, if it goes over thinking time
         if time.time() - self.start > THINKING_TIME:
             return None
 
@@ -104,7 +102,7 @@ class KonaneAI:
         v = -1000
         for s in state.get_successors():
             s.value = self.min_value(depth + 1, s, alpha, beta)
-            if s.value == None: return None # thinking time reached, terminate current search
+            if s.value == None: return None # terminate current search: thinking time limit reached
             v = max(v, s.value)
             if v >= beta: return v
             alpha = max(alpha, v)
@@ -112,6 +110,7 @@ class KonaneAI:
         return v
 
     def min_value(self, depth, state, alpha, beta):
+         # terminate current search, if it goes over thinking time
         if time.time() - self.start > THINKING_TIME:
             return None   
 
@@ -143,11 +142,11 @@ class KonaneAI:
         
         return False
     
-    # check if its W's first move, special case - remove a piece
     def is_first_move_W(self, state):
+        # board with D5 removed
         board_1 = KonaneBoard()
         board_1.update_by_move("D5")
-
+        # board with E4 removed
         board_2 = KonaneBoard()
         board_2.update_by_move("E4")
 
@@ -307,6 +306,7 @@ class KonaneBoard:
         print(f' {list(self.x)}')
         print()
 
+    # duplicate a board
     def get_board(self):
         return copy.deepcopy(self.board)
     
@@ -333,6 +333,7 @@ class KonaneBoard:
                 current_board.append(list(row.strip()))
         return current_board
 
+# convert text file into a list of lists
 def convert_file_to_board(filename):
     board = []
     fh = open(filename, "r")
@@ -348,26 +349,19 @@ def convert_file_to_board(filename):
     return board
 
 def main():
-    #board = KonaneBoard()
     filename = sys.argv[1]
     colour = sys.argv[2]
     board = KonaneBoard(convert_file_to_board(filename))
-    board.print_board()
     agent = KonaneAI(colour, Node(board))
     # use algo for first moves to expand nodes to maximise thinking time
     agent.reset()
     print(agent.action())
     while True:
-        #print(time.time() - agent.start) - check time to see if within thinking time
-        agent.state.board.print_board()
         opp_action = input()
         agent.reset()
         agent.update_state(opp_action) # update state by by using opponent's input
-        agent.state.board.print_board()
-        print(agent.generate_valid_moves(agent.state))
         print(agent.action())
-        print(time.time() - agent.start)
-        print(agent.generate_valid_moves(agent.state))
+        #print(time.time() - agent.start) - check to see if its within time
 
 if __name__ == "__main__":
     main()
