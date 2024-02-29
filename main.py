@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import time
 import copy
@@ -14,8 +16,6 @@ class Node:
       self.colours_turn = colours_turn
       self.action = action
       self.successors = []
-      self.alpha = -1000
-      self.beta = 1000
       self.value = 0
 
     def get_successors(self):
@@ -155,6 +155,11 @@ class KonaneAI:
         else: 
             return False
 
+    def move_count(self, state):
+        count = 0 
+        for row in state.board.board:
+            count += row.count('O')
+        return count
     def evaluation(self, state):
         # Evaluation #1: difference between total moves and opponents moves
         # agent's turn for the given state
@@ -181,7 +186,7 @@ class KonaneAI:
             if state.predecessor == None: # if agent is W and first move, need only one since symmetric
                 return random.choice([["E5"], ["D4"]] )
             return ["E5", "D4"] # first move of W - remove piece
-    
+          
         # identify opponent's colour
         if state.colours_turn == "B": colour_opp = "W"
         else: colour_opp = "B"
@@ -309,29 +314,13 @@ class KonaneBoard:
     # duplicate a board
     def get_board(self):
         return copy.deepcopy(self.board)
-    
-    def play_game(self):
-        count = 0
-        player_1 = KonaneAI('B')
-        player_2 = KonaneAI('W')
-        action = ''
-        while action != 'quit':
-            self.print_board()
-            if count % 2 == 0:
-                player = player_1
-            else:
-                player = player_2
-            action = player.action(self)
-            if action != 'quit':
-                self.update_by_move(action)
-            count += 1
 
-    def get_board_from_file(self, filename):
-        current_board = []
-        with open(filename) as file:
-            for row in file:
-                current_board.append(list(row.strip()))
-        return current_board
+def get_board_from_file(filename):
+    current_board = []
+    with open(filename) as file:
+        for row in file:
+            current_board.append(list(row.strip()))
+    return current_board
 
 # convert text file into a list of lists
 def convert_file_to_board(filename):
@@ -349,6 +338,7 @@ def convert_file_to_board(filename):
     return board
 
 def main():
+  ''' USES ALPHA BETA PRUNING - need to integrate into drivercheck
     filename = sys.argv[1]
     colour = sys.argv[2]
     board = KonaneBoard(convert_file_to_board(filename))
@@ -362,6 +352,33 @@ def main():
         agent.update_state(opp_action) # update state by by using opponent's input
         print(agent.action())
         #print(time.time() - agent.start) - check to see if its within time
+    '''
+
+    filename = sys.argv[1]
+    colour = sys.argv[2]
+
+    board = KonaneBoard(get_board_from_file(filename))
+    agent = KonaneAI(colour, board)
+    state = Node(board, colour)
+
+    
+    while True:
+        moves = agent.generate_valid_moves(state)
+        
+        if len(moves) == 0:
+            print("You won")
+            return
+        else:
+            move = random.sample(moves, 1)[0]
+            board.update_by_move(move)
+            print(move)
+        
+        try:
+            opp_move = input()
+        except:
+            return
+
+        board.update_by_move(opp_move)
 
 if __name__ == "__main__":
     main()
