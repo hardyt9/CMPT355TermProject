@@ -209,6 +209,7 @@ class KonaneAI:
     Return: A numerical score representing the desirability of the current game state for the AI.
     '''
     def evaluation(self, depth, state):
+        '''
         # Evaluation #1: difference between total moves and opponents moves
         # agent's turn for the given state
         
@@ -225,24 +226,27 @@ class KonaneAI:
         
         # Other evaluations...
         '''
-        #Evaluation #2
+        #Evaluation #3
         if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
             if len(state.successors) == 0: # loss - terminal node with depth
                 return -100 + depth  # add depth to get the most possible moves before a loss
+            total_moves = len(state.successors)
+            total_moves_opp = len(state.predecessor.successors)
             agent_can_move = state.pieces_can_move
             opp_can_move = state.predecessor.pieces_can_move
                 
         else: # opponent's turn for the given state
             if len(state.successors) == 0: # win - terminal node with depth
                 return 100 - depth  # subtract depth to get the least states to go through to to a win
+            total_moves_opp = len(state.successors)
+            total_moves = len(state.predecessor.successors)
             agent_can_move = state.predecessor.pieces_can_move
             opp_can_move = state.pieces_can_move
 
-        evaluation = agent_can_move- opp_can_move
-        '''
-        evaluation = total_moves - total_moves_opp
+        total_moves = (total_moves - total_moves_opp) * 0.01
+        evaluation = agent_can_move - opp_can_move + total_moves
+        #evaluation = total_moves - total_moves_opp
         return evaluation
-    
     '''
     Purpose: Generate valid moves for the current state.
     Parameters:
@@ -456,34 +460,6 @@ def get_board_from_file(filename):
         for row in file:
             current_board.append(list(row.strip()))
     return current_board
-
-# use to play agent, displaying the board after each move, possible moves and time used by agent
-def main_displayed():
-    # get arguments 'python3 main.py filename colour'
-    filename = sys.argv[1]
-    colour = sys.argv[2]
-    # create agent and current board from the given file
-    board = KonaneBoard(get_board_from_file(filename))
-    agent = KonaneAI(colour, board)
-    # use algo for first moves maximise thinking time given by expanding nodes
-    agent.state.board.print_board()
-    print("Agent is thinking...")
-    agent.reset()
-    print(agent.action())
-    agent.state.board.print_board()
-    
-    # input opponents move, output agent move
-    while True:
-        print(agent.generate_valid_moves(agent.state))
-        opp_move = input()
-        agent.reset()
-        agent.update_state(opp_move) # update state by by using opponent's input
-        agent.state.board.print_board()
-        print(agent.generate_valid_moves(agent.state))
-        print("Agent is thinking...")
-        print(agent.action())
-        agent.state.board.print_board()
-        print(time.time() - agent.start)
 
 def main():
     # get arguments 'python3 main.py filename colour'
