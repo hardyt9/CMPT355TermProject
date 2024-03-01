@@ -225,6 +225,31 @@ class KonaneAI:
             total_moves = len(state.predecessor.successors)
         
         # Other evaluations...
+        '''
+        Evaluation #2
+        if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
+            if len(state.successors) == 0: # loss - terminal node with depth
+                return -100 + depth  # add depth to get the most possible moves before a loss
+            total_pieces_can_move = set()
+            for i in state.successors:
+                total_pieces_can_move.append(i[0:2])
+
+            total_pieces_can_move = set()
+                for i in state.predecessor.successors:
+                    total_pieces_can_move.append(i[0:2])        
+                
+        else: # opponent's turn for the given state
+            if len(state.successors) == 0: # win - terminal node with depth
+                return 100 - depth  # subtract depth to get the least states to go through to to a win
+            total_pieces_can_move = set()
+            for i in state.predecessor.successors:
+                total_pieces_can_move.append(i[0:2])
+
+            total_pieces_can_move = set()
+                for i in state.successors:
+                    total_pieces_can_move.append(i[0:2])      
+
+        '''
         evaluation = total_moves - total_moves_opp
         return evaluation
     '''
@@ -480,4 +505,4 @@ def main():
         #print(time.time() - agent.start) - check to see if its within time
 
 if __name__ == "__main__":
-    main()
+    main_displayed()
