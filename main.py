@@ -14,9 +14,9 @@ import time
 import copy
 import random
 
-THINKING_TIME = 19.9
+THINKING_TIME = 18.5
 '''
-This class represents the Konane playing AI agent. 
+This class represents the Konane playing AI agent storing a search tree and performs alpha beta pruning. 
 Stores the information about the agent's current:
     - state: represents the current state of the game board. Allows AI to analyze and make decisions based on board configuration. 
     - color: Indicates the color of the AI agent. ('B' or 'W'). So that the AI knows which peices it controls. 
@@ -64,7 +64,7 @@ class KonaneAI:
     '''
     def update_state(self, move):
         # update state to a successor if move == successor.move
-        for successor in self.state.successors():
+        for successor in self.state.successors:
             if successor.move == move:
                 self.state = successor
                 return
@@ -116,8 +116,9 @@ class KonaneAI:
         depth = 0
         v = self.max_value(depth, self.state, -1000, 1000)
         if v == None: return None # thinking time reached, terminate current search
-        for s in self.state.successors():
+        for s in self.state.successors:
             if s.value == v:
+                #print(s.move, v, end=" ")
                 return s # modfied to return a state instead of an action to replace current state with
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
@@ -133,11 +134,11 @@ class KonaneAI:
         # terminate current search, if it goes over thinking time
         if time.time() - self.start > THINKING_TIME: return None
         # cutoff/terminal node found
-        if self.cutoff_test(depth, state): return self.evaluation(state)
+        if self.cutoff_test(depth, state): return self.evaluation(depth, state)
         v = -1000
         # recursive
         for s in state.successors:
-            s.set_value(self.min_value(depth + 1, s, alpha, beta))
+            s.value = self.min_value(depth + 1, s, alpha, beta)
             if s.value == None: return None # terminate current search: thinking time limit reached
             v = max(v, s.value)
             if v >= beta: return v
@@ -157,11 +158,11 @@ class KonaneAI:
         # terminate current search, if it goes over thinking time
         if time.time() - self.start > THINKING_TIME: return None   
         # cutoff/terminale node found
-        if self.cutoff_test(depth, state): return self.evaluation(state)
+        if self.cutoff_test(depth, state): return self.evaluation(depth, state)
         v = 1000
         # recursive
         for s in state.successors:
-            s.set_value(self.max_value(depth + 1, s, alpha, beta))
+            s.value = self.max_value(depth + 1, s, alpha, beta)
             if s.value == None: return None # thinking time reached, terminate current search
             v = min(v, s.value)
             if v <= alpha: return v
@@ -208,17 +209,18 @@ class KonaneAI:
         - state: Current state/node.
     Return: A numerical score representing the desirability of the current game state for the AI.
     '''
-    def evaluation(self, state):
+    def evaluation(self, depth, state):
         # Evaluation #1: difference between total moves and opponents moves
         # agent's turn for the given state
         
         if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
-            if len(state.successors) == 0: return -100 # loss - terminal node
-            total_moves = len(state.successors())
+            if len(state.successors) == 0: # loss - terminal node with depth
+                return -100 + depth  # add depth to get the most possible moves before a loss
+            total_moves = len(state.successors)
             total_moves_opp = len(state.predecessor.successors)
-
         else: # opponent's turn for the given state
-            if len(state.successors()) == 0: return 100 # win - terminal node
+            if len(state.successors) == 0: # win - terminal node with depth
+                return 100 - depth  # subtract depth to get the least states to go through to to a win
             total_moves_opp = len(state.successors)
             total_moves = len(state.predecessor.successors)
         
@@ -432,6 +434,33 @@ def get_board_from_file(filename):
             current_board.append(list(row.strip()))
     return current_board
 
+# use to play agent, displaying the board after each move, possible moves and time used by agent
+def main_displayed():
+    # get arguments 'python3 main.py filename colour'
+    filename = sys.argv[1]
+    colour = sys.argv[2]
+    # create agent and current board from the given file
+    board = KonaneBoard(get_board_from_file(filename))
+    agent = KonaneAI(colour, board)
+    # use algo for first moves maximise thinking time given by expanding nodes
+    agent.state.board.print_board()
+    print("Agent is thinking...")
+    agent.reset()
+    print(agent.action())
+    agent.state.board.print_board()
+    # input opponents move, output agent move
+    while True:
+        print(agent.generate_valid_moves(agent.state))
+        opp_move = input()
+        agent.reset()
+        agent.update_state(opp_move) # update state by by using opponent's input
+        agent.state.board.print_board()
+        print(agent.generate_valid_moves(agent.state))
+        print("Agent is thinking...")
+        print(agent.action())
+        agent.state.board.print_board()
+        print(time.time() - agent.start)
+
 def main():
     # get arguments 'python3 main.py filename colour'
     filename = sys.argv[1]
@@ -449,26 +478,6 @@ def main():
         agent.update_state(opp_move) # update state by by using opponent's input
         print(agent.action())
         #print(time.time() - agent.start) - check to see if its within time
-
-    '''
-    while True:
-        moves = agent.generate_valid_moves(agent.state)
-        
-        if len(moves) == 0:
-            print("You won")
-            return
-        else:
-            move = random.sample(moves, 1)[0]
-            board.update_by_move(move)
-            print(move)
-        
-        try:
-            opp_move = input()
-        except:
-            return
-
-        board.update_by_move(opp_move)
-        '''
 
 if __name__ == "__main__":
     main()
