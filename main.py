@@ -118,7 +118,7 @@ class KonaneAI:
         if v == None: return None # thinking time reached, terminate current search
         for s in self.state.successors:
             if s.value == v:
-                #print(s.move, v, end=" ")
+                print(s.move, v)
                 return s # modfied to return a state instead of an action to replace current state with
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
@@ -210,6 +210,7 @@ class KonaneAI:
     Return: A numerical score representing the desirability of the current game state for the AI.
     '''
     def evaluation(self, depth, state):
+        '''
         # Evaluation #1: difference between total moves and opponents moves
         # agent's turn for the given state
         
@@ -226,31 +227,30 @@ class KonaneAI:
         
         # Other evaluations...
         '''
-        Evaluation #2
+        #Evaluation #2
         if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
             if len(state.successors) == 0: # loss - terminal node with depth
                 return -100 + depth  # add depth to get the most possible moves before a loss
-            total_pieces_can_move = set()
+            agent_can_move = set()
             for i in state.successors:
-                total_pieces_can_move.append(i[0:2])
+                agent_can_move.add(i.move[0:2])
 
-            total_pieces_can_move = set()
-                for i in state.predecessor.successors:
-                    total_pieces_can_move.append(i[0:2])        
+            opp_can_move = set()
+            for i in state.predecessor.successors:
+                opp_can_move.add(i.move[0:2])        
                 
         else: # opponent's turn for the given state
             if len(state.successors) == 0: # win - terminal node with depth
                 return 100 - depth  # subtract depth to get the least states to go through to to a win
-            total_pieces_can_move = set()
+            agent_can_move = set()
             for i in state.predecessor.successors:
-                total_pieces_can_move.append(i[0:2])
+                agent_can_move.add(i.move[0:2])
 
-            total_pieces_can_move = set()
-                for i in state.successors:
-                    total_pieces_can_move.append(i[0:2])      
-
-        '''
-        evaluation = total_moves - total_moves_opp
+            opp_can_move = set()
+            for i in state.successors:
+                opp_can_move.add(i.move[0:2])      
+        evaluation = len(agent_can_move) - len(opp_can_move)
+        #evaluation = total_moves - total_moves_opp
         return evaluation
     '''
     Purpose: Generate valid moves for the current state.
@@ -505,4 +505,4 @@ def main():
         #print(time.time() - agent.start) - check to see if its within time
 
 if __name__ == "__main__":
-    main_displayed()
+    main()
