@@ -49,7 +49,7 @@ class KonaneAI:
         self.best_moves = []
         self.colour = colour
         self.max_depth = 2
-        self.t_table = [state] # not yet implemented into program, should store KonaneBoard objects
+        self.t_table = [state] # not yet implemented into program
         self.start = 0
     '''
     Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for a new search based on updated state.
