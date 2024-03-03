@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
     Authors:
     - Hope Oberez, Brandon Funk and Tyler Hardy
@@ -7,14 +9,13 @@
     using alpha-beta pruning in conjunction with minimax tree search and evaluation functions to optimize 
     efficiency and desirability of moves for gameplay. 
 '''
-#!/usr/bin/env python3
 
 import sys
 import time
 import copy
 import random
 
-THINKING_TIME = 18.5
+THINKING_TIME = 19
 '''
 This class represents the Konane playing AI agent storing a search tree and performs alpha beta pruning. 
 Stores the information about the agent's current:
@@ -119,6 +120,7 @@ class KonaneAI:
         for s in self.state.successors.values():
             if s.value == v:
                 return s.move
+
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the max value function for alpha-beta search.
@@ -136,13 +138,20 @@ class KonaneAI:
         if self.cutoff_test(depth, state): return self.evaluation(depth, state)
         v = -1000
         # recursive
-        for s in state.successors.values():
+
+        if depth == 0:
+            successors = self.move_ordering(state)
+        else:
+            successors = state.successors.values()
+
+        for s in successors:
             s.value = self.min_value(depth + 1, s, alpha, beta)
             if s.value == None: return None # terminate current search: thinking time limit reached
             v = max(v, s.value)
             if v >= beta: return v
             alpha = max(alpha, v)
         return v
+    
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the min value function for alpha-beta search.
@@ -160,13 +169,36 @@ class KonaneAI:
         if self.cutoff_test(depth, state): return self.evaluation(depth, state)
         v = 1000
         # recursive
-        for s in state.successors.values():
+        if depth == 0:
+            successors = self.move_ordering(state)
+        else:
+            successors = state.successors.values()
+
+        for s in successors:
             s.value = self.max_value(depth + 1, s, alpha, beta)
             if s.value == None: return None # thinking time reached, terminate current search
             v = min(v, s.value)
             if v <= alpha: return v
             beta = min(beta, v)
         return v
+    
+    def move_ordering(self, state):
+        biased_successor = []
+        best_successor = None
+
+        for successor in state.successors.values():
+            biased_successor.append(successor)
+            if len(self.best_moves) != 0 and successor.move == self.best_moves[self.max_depth-3]:
+                    best_successor = successor
+            else:
+                biased_successor.append(successor)
+
+        if best_successor:
+            biased_successor.append(best_successor)
+
+        biased_successor.reverse()
+        return biased_successor
+    
     '''
     Purpose: Check if a cutoff condition is met based on its depth and if its a terminal/lead node.
     Parameters:
@@ -497,7 +529,10 @@ def main():
     print(agent.action())
     # input opponents move, output agent move
     while True:
-        opp_move = input()
+        try:
+            opp_move = input()
+        except:
+            return
         agent.reset()
         agent.update_state(opp_move) # update state by by using opponent's input
         print(agent.action())
