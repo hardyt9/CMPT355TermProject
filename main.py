@@ -50,7 +50,7 @@ class KonaneAI:
         self.best_moves = []
         self.colour = colour
         self.max_depth = 2
-        self.t_table = [state] # not yet implemented into program
+        self.t_table = {}
         self.start = 0
     '''
     Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for a new search based on updated state.
@@ -80,11 +80,13 @@ class KonaneAI:
     def action(self):
         # loop until thinking time lmited reached
         while time.time() - self.start < THINKING_TIME:
+            self.t_table = {}
             best_move = self.alpha_beta_search()
             # thinking time limit reached while searching: terminate loop
             if best_move == None: break
             self.best_moves.append(best_move) 
             self.max_depth += 1
+            
         #FIFO, pop best move from the most recent search of biggest depth, replace current state
         self.state = self.state.successors.get(self.best_moves.pop())
         return self.state.move
@@ -145,7 +147,14 @@ class KonaneAI:
             successors = state.successors.values()
 
         for s in successors:
-            s.value = self.min_value(depth + 1, s, alpha, beta)
+            key = str(s.board.board)
+
+            if key in self.t_table.keys():
+                s.value = self.t_table[key]
+            else:
+                s.value = self.min_value(depth + 1, s, alpha, beta)
+                self.t_table[key] = s.value
+
             if s.value == None: return None # terminate current search: thinking time limit reached
             v = max(v, s.value)
             if v >= beta: return v
@@ -175,7 +184,14 @@ class KonaneAI:
             successors = state.successors.values()
 
         for s in successors:
-            s.value = self.max_value(depth + 1, s, alpha, beta)
+            key = str(s.board.board)
+            
+            if key in self.t_table.keys():
+                s.value = self.t_table[key]
+            else:
+                s.value = self.max_value(depth + 1, s, alpha, beta)
+                self.t_table[key] = s.value
+
             if s.value == None: return None # thinking time reached, terminate current search
             v = min(v, s.value)
             if v <= alpha: return v
@@ -188,7 +204,7 @@ class KonaneAI:
 
         for successor in state.successors.values():
             biased_successor.append(successor)
-            if len(self.best_moves) != 0 and successor.move == self.best_moves[self.max_depth-3]:
+            if len(self.best_moves) != 0 and successor.move == self.best_moves[-1]:
                     best_successor = successor
             else:
                 biased_successor.append(successor)
