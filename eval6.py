@@ -319,7 +319,7 @@ class KonaneAI:
         corner_eval = (corner_control - corner_control_opp) * 0.05
         centre_eval = (centre_control - centre_control_opp) * 0.05
         total_moves = (total_moves - total_moves_opp) * 0.05
-        evaluation = agent_can_move - opp_can_move + total_moves + centre_eval + corner_control
+        evaluation = agent_can_move - opp_can_move + total_moves + centre_eval + corner_eval
         return evaluation
 
     
