@@ -227,7 +227,7 @@ class KonaneAI:
         
         for successor in state.successors.values():
             biased_successor.append(successor)
-            if len(self.move_order) == depth+1 and successor.move == self.move_order[depth]:
+            if successor in self.move_order:
                     best_successor = successor
             else:
                 biased_successor.append(successor)
