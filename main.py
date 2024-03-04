@@ -176,7 +176,8 @@ class KonaneAI:
                 s.value = self.t_table[key]
             else:
                 s.value = self.min_value(depth + 1, s, alpha, beta)
-                self.t_table[key] = s.value
+                if s.value != None:
+                    self.t_table[key] = s.value
 
             if s.value == None: return None # terminate current search: thinking time limit reached
             v = max(v, s.value)
@@ -210,7 +211,8 @@ class KonaneAI:
                 s.value = self.t_table[key]
             else:
                 s.value = self.max_value(depth + 1, s, alpha, beta)
-                self.t_table[key] = s.value
+                if s.value != None:
+                    self.t_table[key] = s.value
 
             if s.value == None: return None # thinking time reached, terminate current search
             v = min(v, s.value)
@@ -226,7 +228,6 @@ class KonaneAI:
             return state.successors.values()
         
         for successor in state.successors.values():
-            biased_successor.append(successor)
             if successor in self.move_order:
                     best_successor = successor
             else:
