@@ -48,12 +48,10 @@ class KonaneAI:
     def __init__(self, colour, state = None):
         self.state = self.Node(state, colour)
         self.best_moves = []
-        self.move_order = []
         self.colour = colour
         self.max_depth = 2
-        self.t_table = {}
+        self.t_table = {} 
         self.start = 0
-        self.move_count = 0
     '''
     Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for a new search based on updated state.
     '''
@@ -61,7 +59,6 @@ class KonaneAI:
         self.start = time.time()
         self.best_moves = []
         self.max_depth = 2
-        self.move_count += 1
     '''
     Purpose: Update the current KonaneAI state.
     Parameters:
@@ -88,12 +85,12 @@ class KonaneAI:
             # thinking time limit reached while searching: terminate loop
             if best_move == None: break
             self.best_moves.append(best_move) 
-            self.get_move_ordering(self.state)
             self.max_depth += 1
-            
-            
         #FIFO, pop best move from the most recent search of biggest depth, replace current state
-        self.state = self.state.successors.get(self.best_moves.pop())
+        try:
+            self.state = self.state.successors.get(self.best_moves.pop())
+        except:
+            return "You win"
         return self.state.move
     '''
     Purpose: Insert the next possible state/node after a legal move happens from the current state/node.
@@ -114,6 +111,7 @@ class KonaneAI:
             successor.update_by_move(move)
             state.successors[move] = self.Node(successor, colour, move, state)
     
+    
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the alpha-beta search algorithm.
@@ -126,29 +124,6 @@ class KonaneAI:
         for s in self.state.successors.values():
             if s.value == v:
                 return s.move
-            
-    def get_move_ordering(self, state):
-        depth = 0
-        current_state = state
-        ordered_successors = [] 
-        self.move_order = []
-
-        if state.board.board != KonaneBoard().board and not self.is_first_move_W(state): # Only orders move if not the first move
-            while depth != self.max_depth:
-                if depth % 2 == 0: # Our turn
-                    ordered_successors = sorted(current_state.successors.values(), key=lambda x: x.value, reverse = True) # We want to find the state with the maximum eval - that becomes our move
-
-                else: # opponents turn 
-                    ordered_successors = sorted(current_state.successors.values(), key=lambda x: x.value) # find min value assuming optimal play for opponent - that becomes opponents move
-
-                if len(ordered_successors) == 0:
-                    break
-                best_successor = ordered_successors[0]
-                self.move_order.append(best_successor)
-                depth += 1
-                current_state = best_successor
-
-
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the max value function for alpha-beta search.
@@ -166,24 +141,22 @@ class KonaneAI:
         if self.cutoff_test(depth, state): return self.evaluation(depth, state)
         v = -1000
         # recursive
-
-
         successors = self.move_ordering(state, depth)
         for s in successors:
-            key = str(s.board.board)
+            key = (str(s.board.board), alpha, beta)
 
             if key in self.t_table.keys():
                 s.value = self.t_table[key]
             else:
                 s.value = self.min_value(depth + 1, s, alpha, beta)
-                self.t_table[key] = s.value
+                if s.value != None:
+                    self.t_table[key] = s.value
 
             if s.value == None: return None # terminate current search: thinking time limit reached
             v = max(v, s.value)
             if v >= beta: return v
             alpha = max(alpha, v)
         return v
-    
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the min value function for alpha-beta search.
@@ -201,16 +174,16 @@ class KonaneAI:
         if self.cutoff_test(depth, state): return self.evaluation(depth, state)
         v = 1000
         # recursive
-
         successors = self.move_ordering(state, depth)
         for s in successors:
-            key = str(s.board.board)
-            
+            key = (str(s.board.board), alpha, beta)
+
             if key in self.t_table.keys():
                 s.value = self.t_table[key]
             else:
                 s.value = self.max_value(depth + 1, s, alpha, beta)
-                self.t_table[key] = s.value
+                if s.value != None:
+                    self.t_table[key] = s.value
 
             if s.value == None: return None # thinking time reached, terminate current search
             v = min(v, s.value)
@@ -219,24 +192,18 @@ class KonaneAI:
         return v
     
     def move_ordering(self, state, depth):
-        biased_successor = []
+        successors = []
         best_successor = None
-        
-        if state.board.board == KonaneBoard().board or self.is_first_move_W(state):
-            return state.successors.values()
-        
+        if depth == 0:
+            if len(self.best_moves) != 0 and self.best_moves[-1] in state.successors.keys():
+                best_successor = state.successors[self.best_moves[-1]]
+                successors.append(best_successor)
+                
         for successor in state.successors.values():
-            biased_successor.append(successor)
-            if successor in self.move_order:
-                    best_successor = successor
-            else:
-                biased_successor.append(successor)
+            if successor != best_successor:
+                successors.append(successor)
 
-        if best_successor:
-            biased_successor.append(best_successor)
-
-        biased_successor.reverse()
-        return biased_successor
+        return successors
     
     '''
     Purpose: Check if a cutoff condition is met based on its depth and if its a terminal/lead node.
@@ -280,51 +247,27 @@ class KonaneAI:
     Return: A numerical score representing the desirability of the current game state for the AI.
     '''
     def evaluation(self, depth, state):
-        # Using eval #5 as basis
-        # Evaluation 6 - added corner control evaluation; corner pieces are safe, and potentially able to capture 2 pieces
-
-        # Centre & corner control evaluation
-        B_count = 0
-        W_count = 0
-        corner_control = 0
-        corner_control_opp = 0
-        corner_control_B = 0
-        corner_control_W = 0
-
-        current_board = state.board.board
-
-        for row in current_board[2:6]:
-            for piece in row[2:6]:
-                if piece == "B":
-                    B_count += 1
-                else:
-                    W_count += 1
-
-        if current_board[0][0] == "B":
-            corner_control_B += 1
-        if current_board[7][7] == "B":
-            corner_control_B += 1
-        if current_board[0][7] == "W":
-            corner_control_W += 1 
-        if current_board[7][0] == "W":
-            corner_control_W += 1 
-
-        if self.colour == "B":
-            corner_control = corner_control_B
-            corner_control_opp = corner_control_W
-            centre_control = B_count
-            centre_control_opp = W_count
-        else:
-            corner_control = corner_control_W
-            corner_control_opp = corner_control_B
-            centre_control = W_count
-            centre_control_opp = B_count
-
-        # Moves available and number of pieces evaluation
+        '''
+        # Evaluation #1: difference between total moves and opponents moves
+        # agent's turn for the given state
+        
         if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
             if len(state.successors) == 0: # loss - terminal node with depth
                 return -100 + depth  # add depth to get the most possible moves before a loss
-
+            total_moves = len(state.successors)
+            total_moves_opp = len(state.predecessor.successors)
+        else: # opponent's turn for the given state
+            if len(state.successors) == 0: # win - terminal node with depth
+                return 100 - depth  # subtract depth to get the least states to go through to to a win
+            total_moves_opp = len(state.successors)
+            total_moves = len(state.predecessor.successors)
+        
+        # Other evaluations...
+        '''
+        #Evaluation #3
+        if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
+            if len(state.successors) == 0: # loss - terminal node with depth
+                return -100 + depth  # add depth to get the most possible moves before a loss
             total_moves = len(state.successors)
             total_moves_opp = len(state.predecessor.successors)
             agent_can_move = state.pieces_can_move
@@ -333,19 +276,15 @@ class KonaneAI:
         else: # opponent's turn for the given state
             if len(state.successors) == 0: # win - terminal node with depth
                 return 100 - depth  # subtract depth to get the least states to go through to to a win
-
             total_moves_opp = len(state.successors)
             total_moves = len(state.predecessor.successors)
             agent_can_move = state.predecessor.pieces_can_move
             opp_can_move = state.pieces_can_move
 
-        corner_eval = (corner_control - corner_control_opp) * 0.05
-        centre_eval = (centre_control - centre_control_opp) * 0.05
-        total_moves = (total_moves - total_moves_opp) * 0.05
-        evaluation = agent_can_move - opp_can_move + total_moves + centre_eval + corner_control
+        total_moves = (total_moves - total_moves_opp) * 0.01
+        evaluation = agent_can_move - opp_can_move + total_moves
+        #evaluation = total_moves - total_moves_opp
         return evaluation
-
-    
     '''
     Purpose: Generate valid moves for the current state.
     Parameters:
@@ -559,34 +498,6 @@ def get_board_from_file(filename):
         for row in file:
             current_board.append(list(row.strip()))
     return current_board
-
-# use to play agent, displaying the board after each move, possible moves and time used by agent
-def main_displayed():
-    # get arguments 'python3 main.py filename colour'
-    filename = sys.argv[1]
-    colour = sys.argv[2]
-    # create agent and current board from the given file
-    board = KonaneBoard(get_board_from_file(filename))
-    agent = KonaneAI(colour, board)
-    # use algo for first moves maximise thinking time given by expanding nodes
-    agent.state.board.print_board()
-    print("Agent is thinking...")
-    agent.reset()
-    print(agent.action())
-    agent.state.board.print_board()
-    
-    # input opponents move, output agent move
-    while True:
-        print(agent.generate_valid_moves(agent.state))
-        opp_move = input()
-        agent.reset()
-        agent.update_state(opp_move) # update state by by using opponent's input
-        agent.state.board.print_board()
-        print(agent.generate_valid_moves(agent.state))
-        print("Agent is thinking...")
-        print(agent.action())
-        agent.state.board.print_board()
-        print(time.time() - agent.start)
 
 def main():
     # get arguments 'python3 main.py filename colour'
