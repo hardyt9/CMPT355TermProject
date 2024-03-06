@@ -50,16 +50,14 @@ class KonaneAI:
         self.best_moves = []
         self.colour = colour
         self.max_depth = 2
-        self.t_table = {} 
+        self.t_table = {}
+        self.move_count = 0
         self.start = 0
-        self.depth_reached = 0
     '''
     Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for a new search based on updated state.
     '''
     def reset(self):
         self.start = time.time()
-        self.best_moves = []
-        self.max_depth = 2
     '''
     Purpose: Update the current KonaneAI state.
     Parameters:
@@ -79,7 +77,7 @@ class KonaneAI:
     Return: The chosen action.
     '''
     def action(self):
-        # reduce some depth searches by taking the last value of the previous search and starting from there
+        # reduce depth searches by taking the last value of the previous search and starting from there
         if len(self.state.successors) != 0 and self.depth_reached - 2 != 1:
             self.depth_reached = self.depth_reached - 2
             self.max_depth = self.depth_reached + 1
@@ -92,6 +90,7 @@ class KonaneAI:
         else:
             self.max_depth = 2
             self.depth_reached = 2
+            self.best_moves = []
         
         # loop until thinking time lmited reached
         while time.time() - self.start < THINKING_TIME:
@@ -100,7 +99,7 @@ class KonaneAI:
             # thinking time limit reached while searching: terminate loop
             if best_move == None: break
             self.best_moves.append(best_move) 
-            #print(best_move, self.max_depth)
+           # print(best_move, self.max_depth)
             self.max_depth += 1
         #FIFO, pop best move from the most recent search of biggest depth, replace current state
         try:
@@ -108,6 +107,7 @@ class KonaneAI:
         except:
             return "You win"
         return self.state.move
+    
     '''
     Purpose: Insert the next possible state/node after a legal move happens from the current state/node.
     Parameters:
@@ -140,7 +140,7 @@ class KonaneAI:
         for s in self.state.successors.values():
             if s.value == v:
                 self.depth_reached = self.max_depth
-               # print(s.value, end = " ")
+               #print(s.value, end = " ")
                 return s.move
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
@@ -154,27 +154,51 @@ class KonaneAI:
     '''
     def max_value(self, depth, state, alpha, beta):
         # terminate current search, if it goes over thinking time
-        if time.time() - self.start > THINKING_TIME: return None 
+        if time.time() - self.start > THINKING_TIME: return None
         # cutoff/terminal node found
         if self.cutoff_test(depth, state): return self.evaluation(depth, state)
-        v = -1000
-        successors = self.move_ordering(state, depth)
-        for s in successors:
-            key = (str(s.board.board), alpha, beta)
 
-            if key in self.t_table:
-                s.value = self.t_table[key]
-            else:
-                val = self.min_value(depth + 1, s, alpha, beta)
-                if val == None: return None
-                # store val in node and t_table if time limit not reached (None)
-                s.value = val
-                self.t_table[key] = s.value
+        state_key = hash((str(state.board.board)))
+        first_move = None
+        
+        if state_key in self.t_table:
+            state_info = self.t_table[state_key]
+            if state_info['depth'] >= depth + self.move_count:
+                if state_info['flag'] == 'middle':
+                    return state_info['value']
+                elif state_info['flag'] == 'upper':
+                    beta = min(beta, state_info['value'])
+                elif state_info['flag'] == 'lower':
+                    alpha = max(alpha, state_info['value'])
+                if alpha >= beta:
+                    return state_info['value']
+            elif 'move' in state_info:
+                first_move = state_info['move']
 
+        v = -1000   
+
+
+        if first_move:
+            successors = copy.deepcopy(state.successors.values())
+            successors.append(first_move)
+
+
+        # recursive
+        for s in (successors[::-1] if first_move else state.successors.values()):
+            val = self.min_value(depth + 1, s, alpha, beta)
+            if val == None: return None # terminate current search: thinking time limit reached
+            s.value = val
+            if s.value >= v:
+                move = s.move
             v = max(v, s.value)
-            if v >= beta: return v
+            if v >= beta: 
+                self.t_table[state_key] = {'depth': depth + self.move_count, 'value': v, 'flag': 'upper'}
+                return v
             alpha = max(alpha, v)
+
+        self.t_table[state_key] = {'depth': depth + self.move_count, 'value': v, 'flag': 'middle', 'move': move}
         return v
+    
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
     Purpose: Implement the min value function for alpha-beta search.
@@ -190,38 +214,45 @@ class KonaneAI:
         if time.time() - self.start > THINKING_TIME: return None   
         # cutoff/terminale node found
         if self.cutoff_test(depth, state): return self.evaluation(depth, state)
+
+        state_key = hash((str(state.board.board)))
+        first_move = None
+
+        if state_key in self.t_table:
+            state_info = self.t_table[state_key]
+            if state_info['depth'] >= depth + self.move_count:
+                if state_info['flag'] == 'middle':
+                    return state_info['value']
+                elif state_info['flag'] == 'upper':
+                    beta = min(beta, state_info['value'])
+                elif state_info['flag'] == 'lower':
+                    alpha = max(alpha, state_info['value'])
+                if alpha >= beta:
+                    return state_info['value']
+            elif 'move' in state_info:
+                first_move = state_info['move']
+
         v = 1000
-        successors = self.move_ordering(state, depth)
-        for s in successors:
-            key = (str(s.board.board), alpha, beta)
 
-            if key in self.t_table:
-                s.value = self.t_table[key]
-            else:
-                val = self.max_value(depth + 1, s, alpha, beta)
-                if val == None: return None
-                # store val in node and t_table if time limit not reached (None)
-                s.value = val
-                self.t_table[key] = s.value
-            
+        if first_move:
+            successors = copy.deepcopy(state.successors.values())
+            successors.append(first_move)
+
+        # recursive
+        for s in (successors[::-1] if first_move else state.successors.values()):
+            val = self.max_value(depth + 1, s, alpha, beta)
+            if val == None: return None # thinking time reached, terminate current search
+            s.value = val
+            if s.value <= v:
+                move = s.move
             v = min(v, s.value)
-            if v <= alpha: return v
+            if v <= alpha: 
+                self.t_table[state_key] = {'depth': depth, 'value': v, 'flag': 'lower'}
+                return v
             beta = min(beta, v)
+        
+        self.t_table[state_key] = {'depth': depth, 'value': v, 'flag': 'middle', 'move': move}
         return v
-    
-    def move_ordering(self, state, depth):
-        successors = []
-        best_successor = None
-        if depth == 0:
-            if len(self.best_moves) != 0 and self.best_moves[-1] in state.successors:
-                best_successor = state.successors[self.best_moves[-1]]
-                successors.append(best_successor)
-                
-        for successor in state.successors.values():
-            if successor != best_successor:
-                successors.append(successor)
-
-        return successors
     
     '''
     Purpose: Check if a cutoff condition is met based on its depth and if its a terminal/lead node.
@@ -557,6 +588,7 @@ def main():
     print(agent.action())
     # input opponents move, output agent move
     while True:
+        agent.move_count += 2
         try:
             opp_move = input()
         except:
