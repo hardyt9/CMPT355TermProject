@@ -88,7 +88,10 @@ class KonaneAI:
             self.best_moves.append(best_move) 
             self.max_depth += 1
         #FIFO, pop best move from the most recent search of biggest depth, replace current state
-        self.state = self.state.successors.get(self.best_moves.pop())
+        try:
+            self.state = self.state.successors.get(self.best_moves.pop())
+        except:
+            return "You win"
         return self.state.move
     
     '''
