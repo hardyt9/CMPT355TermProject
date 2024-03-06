@@ -53,6 +53,7 @@ class KonaneAI:
         self.t_table = {}
         self.move_count = 0
         self.start = 0
+        self.depth_totals = 0
     '''
     Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for a new search based on updated state.
     '''
@@ -88,7 +89,11 @@ class KonaneAI:
             self.best_moves.append(best_move) 
             self.max_depth += 1
         #FIFO, pop best move from the most recent search of biggest depth, replace current state
-        self.state = self.state.successors.get(self.best_moves.pop())
+        try:
+            self.state = self.state.successors.get(self.best_moves.pop())
+            self.depth_totals += 1
+        except:
+            return "You win"
         return self.state.move
     
     '''
@@ -144,9 +149,10 @@ class KonaneAI:
         state_key = hash((str(state.board.board)))
         first_move = None
         
+
         if state_key in self.t_table:
             state_info = self.t_table[state_key]
-            if state_info['depth'] >= depth + self.move_count:
+            if state_info['depth'] >= self.max_depth:
                 if state_info['flag'] == 'middle':
                     return state_info['value']
                 elif state_info['flag'] == 'upper':
@@ -173,14 +179,14 @@ class KonaneAI:
             if val == None: return None # terminate current search: thinking time limit reached
             s.value = val
             if s.value >= v:
-                move = s.move
+                move = s
             v = max(v, s.value)
             if v >= beta: 
-                self.t_table[state_key] = {'depth': depth + self.move_count, 'value': v, 'flag': 'upper'} # stored v not valid to use, but can help adjust beta
+                self.t_table[state_key] = {'depth': self.max_depth, 'value': v, 'flag': 'upper'} # stored v not valid to use, but can help adjust beta
                 return v
             alpha = max(alpha, v)
 
-        self.t_table[state_key] = {'depth': depth + self.move_count, 'value': v, 'flag': 'middle', 'move': move}
+        self.t_table[state_key] = {'depth': self.max_depth, 'value': v, 'flag': 'middle', 'move': s}
         return v
     
     '''
@@ -204,7 +210,7 @@ class KonaneAI:
 
         if state_key in self.t_table:
             state_info = self.t_table[state_key]
-            if state_info['depth'] >= depth + self.move_count:
+            if state_info['depth'] >= self.max_depth:
                 if state_info['flag'] == 'middle': # if previous value was actual value (i.e alpha <= value <= beta), value is valid to use
                     return state_info['value']
                 elif state_info['flag'] == 'upper': # flag was larger than beta in a previous search
@@ -230,14 +236,14 @@ class KonaneAI:
             if val == None: return None # thinking time reached, terminate current search
             s.value = val
             if s.value <= v:
-                move = s.move
+                move = s
             v = min(v, s.value)
             if v <= alpha: 
-                self.t_table[state_key] = {'depth': depth, 'value': v, 'flag': 'lower'} # stored v is not valid to use, but can help adjust alpha
+                self.t_table[state_key] = {'depth': self.max_depth, 'value': v, 'flag': 'lower'} # stored v is not valid to use, but can help adjust alpha
                 return v
             beta = min(beta, v)
         
-        self.t_table[state_key] = {'depth': depth, 'value': v, 'flag': 'middle', 'move': move} # v value is valid to use and we have the move used to motivate move ordering
+        self.t_table[state_key] = {'depth': self.max_depth, 'value': v, 'flag': 'middle', 'move': s} # v value is valid to use and we have the move (saved as state) used to motivate move ordering
         return v
     
     '''
@@ -282,23 +288,6 @@ class KonaneAI:
     Return: A numerical score representing the desirability of the current game state for the AI.
     '''
     def evaluation(self, depth, state):
-        '''
-        # Evaluation #1: difference between total moves and opponents moves
-        # agent's turn for the given state
-        
-        if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
-            if len(state.successors) == 0: # loss - terminal node with depth
-                return -100 + depth  # add depth to get the most possible moves before a loss
-            total_moves = len(state.successors)
-            total_moves_opp = len(state.predecessor.successors)
-        else: # opponent's turn for the given state
-            if len(state.successors) == 0: # win - terminal node with depth
-                return 100 - depth  # subtract depth to get the least states to go through to to a win
-            total_moves_opp = len(state.successors)
-            total_moves = len(state.predecessor.successors)
-        
-        # Other evaluations...
-        '''
         #Evaluation #3
         if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
             if len(state.successors) == 0: # loss - terminal node with depth
@@ -319,7 +308,9 @@ class KonaneAI:
         total_moves = (total_moves - total_moves_opp) * 0.01
         evaluation = agent_can_move - opp_can_move + total_moves
         #evaluation = total_moves - total_moves_opp
+
         return evaluation
+    
     '''
     Purpose: Generate valid moves for the current state.
     Parameters:
@@ -330,10 +321,8 @@ class KonaneAI:
         # first moves of W and B are unimportant since they are diagonally symmetric
         # randomly choose only one node to search through so it doesn't go through nodes of its diagonally symmetric counterpart
         if state.board.board == KonaneBoard().board: 
-            return random.choice([["D5"], ["E4"]]) # first move of B - remove piece 
+            return ["D5", "E4"] # first move of B - remove piece 
         if self.is_first_move_W(state): 
-            if state.predecessor == None: # first move of W - remove piece
-                return random.choice([["E5"], ["D4"]] )
             return ["E5", "D4"] # if agent is B, must go through both possible states for the first move of W
           
         # identify opponent's colour
@@ -579,6 +568,8 @@ def main():
             opp_move = input()
         except:
             return
+        if agent.move_count > 30:
+            print(agent.depth_totals)
         agent.reset()
         agent.update_state(opp_move) # update state by by using opponent's input
         print(agent.action())
