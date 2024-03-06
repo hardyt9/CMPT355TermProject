@@ -321,8 +321,10 @@ class KonaneAI:
         # first moves of W and B are unimportant since they are diagonally symmetric
         # randomly choose only one node to search through so it doesn't go through nodes of its diagonally symmetric counterpart
         if state.board.board == KonaneBoard().board: 
-            return ["D5", "E4"] # first move of B - remove piece 
+            return random.choice([["D5"], ["E4"]]) # first move of B - remove piece 
         if self.is_first_move_W(state): 
+            if state.predecessor == None: # first move of W - remove piece
+                return random.choice([["E5"], ["D4"]] )
             return ["E5", "D4"] # if agent is B, must go through both possible states for the first move of W
           
         # identify opponent's colour
