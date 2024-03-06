@@ -53,7 +53,7 @@ class KonaneAI:
         self.t_table = {}
         self.move_count = 0
         self.start = 0
-        self.depth_totals = 0
+
     '''
     Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for a new search based on updated state.
     '''
@@ -91,7 +91,6 @@ class KonaneAI:
         #FIFO, pop best move from the most recent search of biggest depth, replace current state
         try:
             self.state = self.state.successors.get(self.best_moves.pop())
-            self.depth_totals += 1
         except:
             return "You win"
         return self.state.move
@@ -148,11 +147,11 @@ class KonaneAI:
 
         state_key = hash((str(state.board.board)))
         first_move = None
-        
+        abs_depth = self.max_depth + self.move_count
 
         if state_key in self.t_table:
             state_info = self.t_table[state_key]
-            if state_info['depth'] >= self.max_depth:
+            if state_info['depth'] >= abs_depth:
                 if state_info['flag'] == 'middle':
                     return state_info['value']
                 elif state_info['flag'] == 'upper':
@@ -182,11 +181,11 @@ class KonaneAI:
                 move = s
             v = max(v, s.value)
             if v >= beta: 
-                self.t_table[state_key] = {'depth': self.max_depth, 'value': v, 'flag': 'upper'} # stored v not valid to use, but can help adjust beta
+                self.t_table[state_key] = {'depth': abs_depth, 'value': v, 'flag': 'upper'} # stored v not valid to use, but can help adjust beta
                 return v
             alpha = max(alpha, v)
 
-        self.t_table[state_key] = {'depth': self.max_depth, 'value': v, 'flag': 'middle', 'move': s}
+        self.t_table[state_key] = {'depth': abs_depth, 'value': v, 'flag': 'middle', 'move': move}
         return v
     
     '''
@@ -207,10 +206,11 @@ class KonaneAI:
 
         state_key = hash((str(state.board.board)))
         first_move = None
+        abs_depth = self.max_depth + self.move_count
 
         if state_key in self.t_table:
             state_info = self.t_table[state_key]
-            if state_info['depth'] >= self.max_depth:
+            if state_info['depth'] >= abs_depth:
                 if state_info['flag'] == 'middle': # if previous value was actual value (i.e alpha <= value <= beta), value is valid to use
                     return state_info['value']
                 elif state_info['flag'] == 'upper': # flag was larger than beta in a previous search
@@ -239,11 +239,11 @@ class KonaneAI:
                 move = s
             v = min(v, s.value)
             if v <= alpha: 
-                self.t_table[state_key] = {'depth': self.max_depth, 'value': v, 'flag': 'lower'} # stored v is not valid to use, but can help adjust alpha
+                self.t_table[state_key] = {'depth': abs_depth, 'value': v, 'flag': 'lower'} # stored v is not valid to use, but can help adjust alpha
                 return v
             beta = min(beta, v)
         
-        self.t_table[state_key] = {'depth': self.max_depth, 'value': v, 'flag': 'middle', 'move': s} # v value is valid to use and we have the move (saved as state) used to motivate move ordering
+        self.t_table[state_key] = {'depth': abs_depth, 'value': v, 'flag': 'middle', 'move': move} # v value is valid to use and we have the move (saved as state) used to motivate move ordering
         return v
     
     '''
@@ -570,8 +570,6 @@ def main():
             opp_move = input()
         except:
             return
-        if agent.move_count > 30:
-            print(agent.depth_totals)
         agent.reset()
         agent.update_state(opp_move) # update state by by using opponent's input
         print(agent.action())
