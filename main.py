@@ -58,6 +58,9 @@ class KonaneAI:
     '''
     def reset(self):
         self.start = time.time()
+        self.best_moves = []
+        self.max_depth = 2
+        
     '''
     Purpose: Update the current KonaneAI state.
     Parameters:
