@@ -49,13 +49,15 @@ class KonaneAI:
         self.best_moves = []
         self.colour = colour
         self.max_depth = 2
-        self.t_table = [state] # not yet implemented into program, should store KonaneBoard objects
+        self.t_table = [state] # not yet implemented
         self.start = 0
     '''
     Purpose: Reset Konane agent values for max_depth, start (timer), and best_moves for a new search based on updated state.
     '''
     def reset(self):
         self.start = time.time()
+        self.max_depth = 2
+        self.best_moves = []
     '''
     Purpose: Update the current KonaneAI state.
     Parameters:
@@ -75,21 +77,6 @@ class KonaneAI:
     Return: The chosen action.
     '''
     def action(self):
-        # reduce depth searches by taking the last value of the previous search and starting from there
-        if len(self.state.successors) != 0 and self.depth_reached - 2 != 1:
-            self.depth_reached = self.depth_reached - 2
-            self.max_depth = self.depth_reached + 1
-
-            for i in self.state.successors.values():
-                if i.value == self.state.value:
-                    self.best_moves = [i.move]
-                    #print(i.value, str(self.best_moves), self.depth_reached)
-                    break
-        else:
-            self.max_depth = 2
-            self.depth_reached = 2
-            self.best_moves = []
-        
         # loop until thinking time lmited reached
         while time.time() - self.start < THINKING_TIME:
             self.t_table = {}
@@ -136,8 +123,6 @@ class KonaneAI:
         if v == None: return None # thinking time reached, terminate current search
         for s in self.state.successors.values():
             if s.value == v:
-                self.depth_reached = self.max_depth
-               #print(s.value, end = " ")
                 return s.move
     '''
     Note: Implemented and modified the pseudocode for alpha beta pruning provided in the Adversarial Search slides found in Lecture Notes.   
@@ -231,23 +216,6 @@ class KonaneAI:
     Return: A numerical score representing the desirability of the current game state for the AI.
     '''
     def evaluation(self, depth, state):
-        '''
-        # Evaluation #1: difference between total moves and opponents moves
-        # agent's turn for the given state
-        
-        if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
-            if len(state.successors) == 0: # loss - terminal node with depth
-                return -100 + depth  # add depth to get the most possible moves before a loss
-            total_moves = len(state.successors)
-            total_moves_opp = len(state.predecessor.successors)
-        else: # opponent's turn for the given state
-            if len(state.successors) == 0: # win - terminal node with depth
-                return 100 - depth  # subtract depth to get the least states to go through to to a win
-            total_moves_opp = len(state.successors)
-            total_moves = len(state.predecessor.successors)
-        
-        # Other evaluations...
-        '''
         #Evaluation #3
         if (state.colours_turn == 'B' and self.colour == 'B') or (state.colours_turn == 'W' and self.colour == 'W'):
             if len(state.successors) == 0: # loss - terminal node with depth
@@ -483,33 +451,6 @@ def get_board_from_file(filename):
             current_board.append(list(row.strip()))
     return current_board
 
-# use to play agent, displaying the board after each move, possible moves and time used by agent
-def main_displayed():
-    # get arguments 'python3 main.py filename colour'
-    filename = sys.argv[1]
-    colour = sys.argv[2]
-    # create agent and current board from the given file
-    board = KonaneBoard(get_board_from_file(filename))
-    agent = KonaneAI(colour, board)
-    # use algo for first moves maximise thinking time given by expanding nodes
-    agent.state.board.print_board()
-    print("Agent is thinking...")
-    agent.reset()
-    print(agent.action())
-    agent.state.board.print_board()
-    
-    # input opponents move, output agent move
-    while True:
-        print(agent.generate_valid_moves(agent.state))
-        opp_move = input()
-        agent.reset()
-        agent.update_state(opp_move) # update state by by using opponent's input
-        agent.state.board.print_board()
-        print(agent.generate_valid_moves(agent.state))
-        print("Agent is thinking...")
-        print(agent.action())
-        agent.state.board.print_board()
-        print(time.time() - agent.start)
 
 def main():
     # get arguments 'python3 main.py filename colour'
