@@ -60,7 +60,7 @@ class KonaneAI:
         self.start = time.time()
         self.best_moves = []
         self.max_depth = 2
-        
+
     '''
     Purpose: Update the current KonaneAI state.
     Parameters:
@@ -176,7 +176,7 @@ class KonaneAI:
                 move = s.move
             v = max(v, s.value)
             if v >= beta: 
-                self.t_table[state_key] = {'depth': depth + self.move_count, 'value': v, 'flag': 'upper'}
+                self.t_table[state_key] = {'depth': depth + self.move_count, 'value': v, 'flag': 'upper'} # stored v not valid to use, but can help adjust beta
                 return v
             alpha = max(alpha, v)
 
@@ -205,14 +205,14 @@ class KonaneAI:
         if state_key in self.t_table:
             state_info = self.t_table[state_key]
             if state_info['depth'] >= depth + self.move_count:
-                if state_info['flag'] == 'middle':
+                if state_info['flag'] == 'middle': # if previous value was actual value (i.e alpha <= value <= beta), value is valid to use
                     return state_info['value']
-                elif state_info['flag'] == 'upper':
-                    beta = min(beta, state_info['value'])
-                elif state_info['flag'] == 'lower':
-                    alpha = max(alpha, state_info['value'])
+                elif state_info['flag'] == 'upper': # flag was larger than beta in a previous search
+                    beta = min(beta, state_info['value']) # therefore if our value is lower than current beta, we can reason that current beta can be beaten
+                elif state_info['flag'] == 'lower': # flag was less than alpha in a previous search
+                    alpha = max(alpha, state_info['value']) # therefore if our value is larger than current alpha, we can reason that current alpha can be beaten
                 if alpha >= beta:
-                    return state_info['value']
+                    return state_info['value'] # if our new-found alpha and beta are no longer valid, we return the value found
             elif 'move' in state_info:
                 first_move = state_info['move']
 
@@ -225,7 +225,7 @@ class KonaneAI:
                 successors.append(s)
 
         # recursive
-        for s in (successors[::-1] if first_move else state.successors.values()):
+        for s in (successors if first_move else state.successors.values()):
             val = self.max_value(depth + 1, s, alpha, beta)
             if val == None: return None # thinking time reached, terminate current search
             s.value = val
@@ -233,11 +233,11 @@ class KonaneAI:
                 move = s.move
             v = min(v, s.value)
             if v <= alpha: 
-                self.t_table[state_key] = {'depth': depth, 'value': v, 'flag': 'lower'}
+                self.t_table[state_key] = {'depth': depth, 'value': v, 'flag': 'lower'} # stored v is not valid to use, but can help adjust alpha
                 return v
             beta = min(beta, v)
         
-        self.t_table[state_key] = {'depth': depth, 'value': v, 'flag': 'middle', 'move': move}
+        self.t_table[state_key] = {'depth': depth, 'value': v, 'flag': 'middle', 'move': move} # v value is valid to use and we have the move used to motivate move ordering
         return v
     
     '''
