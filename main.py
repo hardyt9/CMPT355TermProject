@@ -77,35 +77,15 @@ class KonaneAI:
     Return: The chosen action.
     '''
     def action(self):
-        # reduce depth searches by taking the last value of the previous search and starting from there
-        if len(self.state.successors) != 0 and self.depth_reached - 2 != 1:
-            self.depth_reached = self.depth_reached - 2
-            self.max_depth = self.depth_reached + 1
-
-            for i in self.state.successors.values():
-                if i.value == self.state.value:
-                    self.best_moves = [i.move]
-                    #print(i.value, str(self.best_moves), self.depth_reached)
-                    break
-        else:
-            self.max_depth = 2
-            self.depth_reached = 2
-            self.best_moves = []
-        
         # loop until thinking time lmited reached
         while time.time() - self.start < THINKING_TIME:
-            self.t_table = {}
             best_move = self.alpha_beta_search()
             # thinking time limit reached while searching: terminate loop
             if best_move == None: break
             self.best_moves.append(best_move) 
-           # print(best_move, self.max_depth)
             self.max_depth += 1
         #FIFO, pop best move from the most recent search of biggest depth, replace current state
-        try:
-            self.state = self.state.successors.get(self.best_moves.pop())
-        except:
-            return "You win"
+        self.state = self.state.successors.get(self.best_moves.pop())
         return self.state.move
     
     '''
@@ -179,12 +159,13 @@ class KonaneAI:
 
 
         if first_move:
-            successors = copy.deepcopy(state.successors.values())
+            successors = []
             successors.append(first_move)
-
+            for s in state.successors.values():
+                successors.append(s)
 
         # recursive
-        for s in (successors[::-1] if first_move else state.successors.values()):
+        for s in (successors if first_move else state.successors.values()):
             val = self.min_value(depth + 1, s, alpha, beta)
             if val == None: return None # terminate current search: thinking time limit reached
             s.value = val
@@ -235,8 +216,10 @@ class KonaneAI:
         v = 1000
 
         if first_move:
-            successors = copy.deepcopy(state.successors.values())
+            successors = []
             successors.append(first_move)
+            for s in state.successors.values():
+                successors.append(s)
 
         # recursive
         for s in (successors[::-1] if first_move else state.successors.values()):
