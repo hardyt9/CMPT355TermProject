@@ -81,17 +81,14 @@ class KonaneAI:
     '''
     def action(self):
         # loop until thinking time lmited reached
-        while time.time() - self.start < THINKING_TIME:
+        while time.time() - self.start < THINKING_TIME and self.max_depth < 65:
             best_move = self.alpha_beta_search()
             # thinking time limit reached while searching: terminate loop
             if best_move == None: break
             self.best_moves.append(best_move) 
             self.max_depth += 1
         #FIFO, pop best move from the most recent search of biggest depth, replace current state
-        try:
-            self.state = self.state.successors.get(self.best_moves.pop())
-        except:
-            return "You win"
+        self.state = self.state.successors.get(self.best_moves.pop())
         return self.state.move
     
     '''
