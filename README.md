@@ -25,8 +25,8 @@ Konane is a two-player game played on a rectangular grid. The objective of the g
 1. konaneAI.py is fully executable in the command line without compiling
     - a shebang line is included in the first line of the code to invoke the Python interpreter
 3. The agent takes two arguments - filename, and colour
-    - filename provides a game-board state that the agent is to use in the current game
-    - colour provides the initial colour that the agent will use in play
+    - filename is the game-board state that the agent is to use in the current game
+    - colour is the initial colour that the agent will use in play
 4. Play with the agent either:
     - by invoking the program directly using the provided arguments
     - by utilizing the provided driver.pl function to have two agents play against one-another
